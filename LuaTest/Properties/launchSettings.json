@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "LuaTest": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
