@@ -53,6 +53,8 @@ void Lua::LuaMarshal::MarshalToStack(lua_State* L, System::Object^ obj) {
 
 	} else if (ty == System::Double::typeid) {
 		lua_pushnumber(L, safe_cast<double>(obj));
+	} else if (ty == System::Collections::Hashtable::typeid) {
+		MarshalHashTableToStack(L, safe_cast<System::Collections::Hashtable^>(obj));
 	} else {
 		throw gcnew System::NotSupportedException();
 	}

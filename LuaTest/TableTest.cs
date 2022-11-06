@@ -136,4 +136,40 @@ public class TableTest {
 
     }
 
+    [Test]
+    public void CanPushNestedHashTable() {
+
+        // Create state
+        using var state = LuaState.NewState();
+
+        // Create table
+        Hashtable table = new() {
+            { 
+                "A", new Hashtable() {
+                    { "1", 1.0 },
+                    { "2", 2.0 }
+                } 
+            },
+            { 
+                "B", new Hashtable() {
+                    { "1", 1.0 },
+                    { "2", 2.0 }
+                }
+            },
+        };
+
+        // Push it
+        state.PushTable(table);
+        state.SetGlobal("g_test");
+
+        // Assert values
+        Assert.Multiple(() => {
+            Assert.That(state.DoString<double>("return g_test.A[\"1\"]"), Is.EqualTo(1.0));
+            Assert.That(state.DoString<double>("return g_test.A[\"2\"]"), Is.EqualTo(2.0));
+            Assert.That(state.DoString<double>("return g_test.B[\"1\"]"), Is.EqualTo(1.0));
+            Assert.That(state.DoString<double>("return g_test.B[\"2\"]"), Is.EqualTo(2.0));
+        });
+
+    }
+
 }
