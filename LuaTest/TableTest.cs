@@ -2,8 +2,6 @@
 
 using Lua;
 
-using System.Collections;
-
 public class TableTest {
 
     [Test]
@@ -168,6 +166,49 @@ public class TableTest {
             Assert.That(state.DoString<double>("return g_test.A[\"2\"]"), Is.EqualTo(2.0));
             Assert.That(state.DoString<double>("return g_test.B[\"1\"]"), Is.EqualTo(1.0));
             Assert.That(state.DoString<double>("return g_test.B[\"2\"]"), Is.EqualTo(2.0));
+        });
+
+    }
+
+    [Test]
+    public void CanGetTable() {
+
+        // Create state
+        using var state = LuaState.NewState();
+
+        // Do string
+        Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.True);
+
+        // Capture it
+        Hashtable table = LuaTable.FromTop(state).ToHashtable();
+
+        // Asserts
+        Assert.Multiple(() => {
+            Assert.That(table["first"], Is.EqualTo("Hello"));
+            Assert.That(table["second"], Is.EqualTo("World"));
+        });
+
+    }
+
+    [Test]
+    public void ThrowsIfNotTableOnTop() {
+
+        // Create state
+        using var state = LuaState.NewState();
+
+        // Push a string
+        state.PushString("Not a table");
+
+        // Get
+        var ex = Assert.Throws<LuaTypeExpectedException>(() => {
+            var _ = LuaTable.FromTop(state);
+        });
+
+        // Assert content
+        Assert.Multiple(() => {
+            Assert.That(ex.Expected, Is.EqualTo(LuaType.Table));
+            Assert.That(ex.Found, Is.EqualTo(LuaType.String));
+            Assert.That(ex.Message, Is.EqualTo($"Lua runtime found {LuaType.String} when expecteing a {LuaType.Table}"));
         });
 
     }

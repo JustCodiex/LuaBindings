@@ -17,7 +17,7 @@ namespace Lua {
 	ref class LuaTable;
 
 	/// <summary>
-	/// Class representing the a Lua thread state. This class cannot be inheritted.
+	/// Class representing the Lua thread state. This class cannot be inheritted.
 	/// </summary>
 	public ref class LuaState sealed {
 	private:
@@ -225,6 +225,12 @@ namespace Lua {
 		/// </summary>
 		/// <param name="count">The amount of items to pop.</param>
 		void Pop(int count);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		int GetTop();
 
 	public:
 

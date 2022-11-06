@@ -2,6 +2,7 @@
 #include "LuaStateAux.h"
 #include "LuaTable.h"
 #include "LuaMarshal.h"
+#include "LuaException.hpp"
 #include "CLIMacros.h"
 #include <stdlib.h>
 
@@ -217,6 +218,10 @@ Lua::LuaTable^ Lua::LuaState::CreateTable(System::Collections::Hashtable^ table)
 
 void Lua::LuaState::Pop(int count) {
 	lua_pop(this->pState, count);
+}
+
+int Lua::LuaState::GetTop() {
+	return lua_gettop(this->pState);
 }
 
 Lua::LuaState^ Lua::LuaState::NewState() {

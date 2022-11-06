@@ -2,7 +2,10 @@
 #include "LuaState.h"
 #include "LuaMarshal.h"
 #include "CLIMacros.h"
+#include "LuaException.hpp"
 #include "lua/ltable.hpp"
+
+#define __TABLEGUARD(idx) if (!this->is_table_guard(idx)) { throw gcnew Lua::LuaTypeExpectedException(static_cast<LuaType>(lua_type(this->L, idx)), LuaType::Table); }
 
 Lua::LuaTable::Iterator::Iterator(lua_State* L) {
     this->L = L;
@@ -61,8 +64,7 @@ bool Lua::LuaTable::is_table_guard(int offset) {
 void Lua::LuaTable::SetField(System::String^ key, System::String^ value) {
 
     // Ensure table
-    if (!this->is_table_guard(-1))
-        throw gcnew System::Exception("");
+    __TABLEGUARD(-1);
 
     // Grab C strings
     __UnmanagedString(kP, key, pKey);
@@ -83,8 +85,7 @@ void Lua::LuaTable::SetField(System::String^ key, System::String^ value) {
 void Lua::LuaTable::SetField(System::String^ key, bool value) {
 
     // Ensure table
-    if (!this->is_table_guard(-1))
-        throw gcnew System::Exception("");
+    __TABLEGUARD(-1);
 
     // Grab key
     __UnmanagedString(kP, key, pKey);
@@ -103,8 +104,7 @@ void Lua::LuaTable::SetField(System::String^ key, bool value) {
 void Lua::LuaTable::SetField(System::String^ key, int value) {
 
     // Ensure table
-    if (!this->is_table_guard(-1))
-        throw gcnew System::Exception("");
+    __TABLEGUARD(-1);
 
     // Grab key
     __UnmanagedString(kP, key, pKey);
@@ -123,8 +123,7 @@ void Lua::LuaTable::SetField(System::String^ key, int value) {
 void Lua::LuaTable::SetField(System::String^ key, double value) {
 
     // Ensure table
-    if (!this->is_table_guard(-1))
-        throw gcnew System::Exception("");
+    __TABLEGUARD(-1);
 
     // Grab key
     __UnmanagedString(kP, key, pKey);
@@ -143,8 +142,7 @@ void Lua::LuaTable::SetField(System::String^ key, double value) {
 void Lua::LuaTable::SetField(System::String^ key) {
 
     // Ensure table
-    if (!this->is_table_guard(-2))
-        throw gcnew System::Exception("");
+    __TABLEGUARD(-2);
 
     // Grab key
     __UnmanagedString(kP, key, pKey);
@@ -160,8 +158,7 @@ void Lua::LuaTable::SetField(System::String^ key) {
 System::Collections::IEnumerator^ Lua::LuaTable::GetEnumerator() {
 
     // Ensure table
-    if (!this->is_table_guard(-1))
-        throw gcnew System::Exception("");
+    __TABLEGUARD(-1);
 
     // Return
     return gcnew LuaTable::Iterator(this->L);
@@ -169,7 +166,25 @@ System::Collections::IEnumerator^ Lua::LuaTable::GetEnumerator() {
 }
 
 System::Collections::Hashtable^ Lua::LuaTable::ToHashtable() {
-    throw gcnew System::NotImplementedException();
+    
+    // Create table
+    System::Collections::Hashtable^ t = gcnew System::Collections::Hashtable(this->iLen);
+
+    // Iterate over entries
+    auto itt = this->GetEnumerator();
+    while (itt->MoveNext()) {
+
+        // Grab current
+        KeyValue kv = safe_cast<KeyValue>(itt->Current);
+        
+        // Add
+        t->Add(kv.Key, kv.Value);
+
+    }
+
+    // Return
+    return t;
+
 }
 
 Lua::LuaTable^ Lua::LuaTable::New(LuaState^ L, int arraySize, int dictionarySize) {
@@ -183,18 +198,16 @@ Lua::LuaTable^ Lua::LuaTable::FromTop(LuaState^ L) {
 }
 
 Lua::LuaTable^ Lua::LuaTable::from_top(lua_State* L) {
-    if (lua_istable(L, -1)) {
-        return gcnew LuaTable(L);
-    } else {
-        throw gcnew System::Exception("top element is not a table element.");
+    if (!lua_istable(L, -1)) {
+        throw gcnew Lua::LuaTypeExpectedException(static_cast<LuaType>(lua_type(L, -1)), LuaType::Table);
     }
+    return gcnew LuaTable(L);
 }
 
 System::Object^ Lua::LuaTable::GetField(System::String^ key, bool popValue) {
 
     // Ensure table
-    if (!this->is_table_guard(-1))
-        throw gcnew System::Exception("");
+    __TABLEGUARD(-1);
 
     // Grab key
     __UnmanagedString(kP, key, pKey);
@@ -222,8 +235,7 @@ generic <class T>
 T Lua::LuaTable::GetField(System::String^ key, bool popValue) {
 
     // Ensure table
-    if (!this->is_table_guard(-1))
-        throw gcnew System::Exception("");
+    __TABLEGUARD(-1);
 
     // Grab key
     __UnmanagedString(kP, key, pKey);

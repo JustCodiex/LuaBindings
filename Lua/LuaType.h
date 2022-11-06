@@ -55,4 +55,12 @@ namespace Lua {
 
 	};
 
+	/* [System::Runtime::CompilerServices::ExtensionAttribute]
+	/// <summary>
+	/// 
+	/// </summary>
+	public ref class LuaTypeHelper sealed abstract {
+
+	};*/
+
 }

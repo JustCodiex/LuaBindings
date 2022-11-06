@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CLIMacros.h" />
+    <ClInclude Include="LuaException.hpp" />
     <ClInclude Include="LuaLib.h" />
     <ClInclude Include="LuaMarshal.h" />
     <ClInclude Include="LuaState.h" />

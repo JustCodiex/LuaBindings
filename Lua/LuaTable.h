@@ -113,9 +113,9 @@ namespace Lua {
 		virtual System::Collections::IEnumerator^ GetEnumerator();
 
 		/// <summary>
-		/// 
+		/// Get the table as a <see cref="System::Collections::Hashtable"/> instance.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>The <see cref="System::Collections::Hashtable"/> representation of the table.</returns>
 		System::Collections::Hashtable^ ToHashtable();
 
 		/// <summary>
@@ -157,10 +157,10 @@ namespace Lua {
 		}
 
 		/// <summary>
-		/// 
+		/// Create a <see cref="LuaTable"/> instance from the current top stack value.
 		/// </summary>
-		/// <param name="L"></param>
-		/// <returns></returns>
+		/// <param name="L">The state to get table from.</param>
+		/// <returns>The <see cref="LuaTable"/> currently at the top of the stack.</returns>
 		static LuaTable^ FromTop(LuaState^ L);
 
 	private:
