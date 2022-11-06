@@ -117,6 +117,15 @@
     <ClInclude Include="LuaType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LuaTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CLIMacros.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LuaMarshal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LuaState.cpp">
@@ -225,6 +234,12 @@
       <Filter>Source Files\lua</Filter>
     </ClCompile>
     <ClCompile Include="LuaLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LuaTable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LuaMarshal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

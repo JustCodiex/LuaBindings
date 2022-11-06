@@ -1,5 +1,8 @@
 #include "LuaState.h"
 #include "LuaStateAux.h"
+#include "LuaTable.h"
+#include "LuaMarshal.h"
+#include "CLIMacros.h"
 #include <stdlib.h>
 
 using namespace System::Runtime::InteropServices;
@@ -95,14 +98,13 @@ System::String^ Lua::LuaState::GetString(int stackOffset) {
 Lua::LuaType Lua::LuaState::GetGlobal(System::String^ name) {
 
 	// Grab C++ string
-	System::IntPtr strPtr = Marshal::StringToHGlobalAnsi(name);
-	const char* pLStr = static_cast<const char*>(strPtr.ToPointer());
+	__UnmanagedString(strPtr, name, pLStr);
 
 	// Get global on top
 	LuaType result = static_cast<LuaType>(lua_getglobal(this->pState, pLStr));
 
 	// Free unmanaged
-	Marshal::FreeHGlobal(strPtr);
+	__UnmangedFreeString(strPtr);
 
 	// Return result
 	return result;
@@ -112,14 +114,13 @@ Lua::LuaType Lua::LuaState::GetGlobal(System::String^ name) {
 void Lua::LuaState::SetGlobal(System::String^ name) {
 
 	// Grab C++ string
-	System::IntPtr strPtr = Marshal::StringToHGlobalAnsi(name);
-	const char* pLStr = static_cast<const char*>(strPtr.ToPointer());
+	__UnmanagedString(strPtr, name, pLStr);
 
 	// Get global on top
 	lua_setglobal(this->pState, pLStr);
 
 	// Free unmanaged
-	Marshal::FreeHGlobal(strPtr);
+	__UnmangedFreeString(strPtr);
 
 }
 
@@ -151,6 +152,10 @@ void Lua::LuaState::PushString(System::String^ value) {
 	// Free unmanaged
 	Marshal::FreeHGlobal(strPtr);
 
+}
+
+void Lua::LuaState::PushTable(System::Collections::Hashtable^ table) {
+	LuaMarshal::MarshalHashTableToStack(this->pState, table);
 }
 
 typedef int (*CSLDelegate)(Lua::LuaState^ L);
@@ -200,6 +205,18 @@ void Lua::LuaState::PushCSharpFunction(LuaFunctionDelegate^ func) {
 	// Push closure
 	lua_pushcclosure(this->pState, csharp_invoke_luahandle, 1);
 
+}
+
+Lua::LuaTable^ Lua::LuaState::CreateTable(int arraySize, int dictionarySize) {
+	return LuaTable::New(this, arraySize, dictionarySize);
+}
+
+Lua::LuaTable^ Lua::LuaState::CreateTable(System::Collections::Hashtable^ table) {
+	throw gcnew System::NotImplementedException();
+}
+
+void Lua::LuaState::Pop(int count) {
+	lua_pop(this->pState, count);
 }
 
 Lua::LuaState^ Lua::LuaState::NewState() {

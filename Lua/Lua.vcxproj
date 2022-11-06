@@ -19,9 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CLIMacros.h" />
     <ClInclude Include="LuaLib.h" />
+    <ClInclude Include="LuaMarshal.h" />
     <ClInclude Include="LuaState.h" />
     <ClInclude Include="LuaStateAux.h" />
+    <ClInclude Include="LuaTable.h" />
     <ClInclude Include="LuaType.h" />
     <ClInclude Include="lua\lapi.hpp" />
     <ClInclude Include="lua\lauxlib.hpp" />
@@ -54,7 +57,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LuaLib.cpp" />
+    <ClCompile Include="LuaMarshal.cpp" />
     <ClCompile Include="LuaState.cpp" />
+    <ClCompile Include="LuaTable.cpp" />
     <ClCompile Include="lua\lapi.cpp" />
     <ClCompile Include="lua\lauxlib.cpp" />
     <ClCompile Include="lua\lbaselib.cpp" />

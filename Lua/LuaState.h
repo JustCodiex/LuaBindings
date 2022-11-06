@@ -14,6 +14,8 @@ namespace Lua {
 	/// <param name="state">The Lua state the function was invoked in.</param>
 	public delegate int LuaFunctionDelegate(ref class LuaState^ state);
 
+	ref class LuaTable;
+
 	/// <summary>
 	/// Class representing the a Lua thread state. This class cannot be inheritted.
 	/// </summary>
@@ -174,13 +176,55 @@ namespace Lua {
 		/// <summary>
 		/// 
 		/// </summary>
-		void PushNil();
+		/// <param name="table"></param>
+		void PushTable(System::Collections::Hashtable^ table);
 
 		/// <summary>
 		/// Push a C# method on to the top of the stack.
 		/// </summary>
 		/// <param name="func">The C# function to push onto the stack.</param>
 		void PushCSharpFunction(LuaFunctionDelegate^ func);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		void PushNil();
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		LuaTable^ CreateTable() {
+			return this->CreateTable(0, 0);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="arraySize"></param>
+		/// <param name="dictionarySize"></param>
+		/// <returns></returns>
+		LuaTable^ CreateTable(int arraySize, int dictionarySize);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="table"></param>
+		/// <returns></returns>
+		LuaTable^ CreateTable(System::Collections::Hashtable^ table);
+
+		/// <summary>
+		/// Pop the current stack value.
+		/// </summary>
+		void Pop() {
+			this->Pop(1);
+		}
+
+		/// <summary>
+		/// Pop the specified amount of stack values.
+		/// </summary>
+		/// <param name="count">The amount of items to pop.</param>
+		void Pop(int count);
 
 	public:
 
