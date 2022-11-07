@@ -2,6 +2,7 @@
 
 #include "lua/luabind.hpp"
 #include "LuaType.h"
+#include "LuaTable.h"
 #include "LuaLib.h"
 
 #include <stdint.h>
@@ -13,8 +14,6 @@ namespace Lua {
 	/// </summary>
 	/// <param name="state">The Lua state the function was invoked in.</param>
 	public delegate int LuaFunctionDelegate(ref class LuaState^ state);
-
-	ref class LuaTable;
 
 	/// <summary>
 	/// Class representing the Lua thread state. This class cannot be inheritted.
@@ -193,25 +192,25 @@ namespace Lua {
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <returns></returns>
-		LuaTable^ CreateTable() {
-			return this->CreateTable(0, 0);
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
 		/// <param name="arraySize"></param>
 		/// <param name="dictionarySize"></param>
 		/// <returns></returns>
-		LuaTable^ CreateTable(int arraySize, int dictionarySize);
+		LuaTable CreateTable(int arraySize, int dictionarySize);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="table"></param>
 		/// <returns></returns>
-		LuaTable^ CreateTable(System::Collections::Hashtable^ table);
+		LuaTable CreateTable(System::Collections::Hashtable^ table);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		LuaTable CreateTable() {
+			return this->CreateTable(0, 0);
+		}
 
 		/// <summary>
 		/// Pop the current stack value.

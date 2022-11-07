@@ -208,11 +208,11 @@ void Lua::LuaState::PushCSharpFunction(LuaFunctionDelegate^ func) {
 
 }
 
-Lua::LuaTable^ Lua::LuaState::CreateTable(int arraySize, int dictionarySize) {
+Lua::LuaTable Lua::LuaState::CreateTable(int arraySize, int dictionarySize) {
 	return LuaTable::New(this, arraySize, dictionarySize);
 }
 
-Lua::LuaTable^ Lua::LuaState::CreateTable(System::Collections::Hashtable^ table) {
+Lua::LuaTable Lua::LuaState::CreateTable(System::Collections::Hashtable^ table) {
 	throw gcnew System::NotImplementedException();
 }
 

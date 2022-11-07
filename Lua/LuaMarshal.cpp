@@ -21,7 +21,7 @@ System::Object^ Lua::LuaMarshal::MarshalStackValue(lua_State* L, int idx) {
 		case Lua::LuaType::String:
 			return Marshal::PtrToStringAnsi(static_cast<System::IntPtr>(const_cast<char*>(lua_tostring(L, idx))));
 		case Lua::LuaType::Table: {
-			LuaTable^ table = LuaTable::from_top(L);
+			LuaTable^ table = LuaTable::from_top(L, -1);
 			return safe_cast<System::Object^>(table->ToHashtable());
 		}
 		case Lua::LuaType::Function:
@@ -53,6 +53,10 @@ void Lua::LuaMarshal::MarshalToStack(lua_State* L, System::Object^ obj) {
 
 	} else if (ty == System::Double::typeid) {
 		lua_pushnumber(L, safe_cast<double>(obj));
+	} else if (ty == System::Single::typeid) {
+		lua_pushnumber(L, static_cast<lua_Number>(safe_cast<float>(obj)));
+	} else if (ty == System::Int32::typeid) {
+		lua_pushinteger(L, static_cast<lua_Integer>(safe_cast<int>(obj)));
 	} else if (ty == System::Collections::Hashtable::typeid) {
 		MarshalHashTableToStack(L, safe_cast<System::Collections::Hashtable^>(obj));
 	} else {

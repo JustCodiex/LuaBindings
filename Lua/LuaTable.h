@@ -7,26 +7,38 @@ namespace Lua {
 	ref class LuaState;
 
 	/// <summary>
-	/// 
+	/// Struct representing a table stored on the Lua stack.
 	/// </summary>
-	public ref class LuaTable sealed : public System::Collections::IEnumerable {
+	/// <remarks>
+	/// The instance is only valid within the stack context of the Lua state and should not be stored in a class.
+	/// </remarks>
+	public value class LuaTable sealed : public System::Collections::IEnumerable {
 
 	public:
 
 		/// <summary>
-		/// 
+		/// Struct representing a (key,value) pair in a <see cref="LuaTable"/>.
 		/// </summary>
 		value class KeyValue {
 		private:
 			System::Object^ mKey;
 			System::Object^ mValue;
 		public:
+			/// <summary>
+			/// Get the key value.
+			/// </summary>
 			property System::Object^ Key {
 				System::Object^ get() { return this->mKey; }
 			}
+			/// <summary>
+			/// Get the value.
+			/// </summary>
 			property System::Object^ Value {
 				System::Object^ get() { return this->mValue; }
 			}
+			/// <summary>
+			/// Initialise a new <see cref="KeyValue"/> instance with a key and value.
+			/// </summary>
 			KeyValue(System::Object^ k, System::Object^ v) {
 				this->mKey = k;
 				this->mValue = v;
@@ -38,7 +50,7 @@ namespace Lua {
 		/// </summary>
 		ref struct Iterator : public System::Collections::Generic::IEnumerator<KeyValue> {
 		public:
-			Iterator(lua_State* L);
+			Iterator(lua_State* L, int sourceOffset);
 			~Iterator();
 			// Inherited via IEnumerator
 			virtual bool MoveNext();
@@ -56,6 +68,7 @@ namespace Lua {
 		private:
 			lua_State* L;
 			bool bIsIterating;
+			int iSourceStackOffset;
 			KeyValue kvCurrent;
 		};
 
@@ -96,17 +109,39 @@ namespace Lua {
 		void SetField(System::String^ key);
 
 		generic<class T>
+		/// <summary>
+		/// Get the value of specified table field.
+		/// </summary>
+		/// <param name="key">The string identifier for the field.</param>
+		/// <returns>The field value or <see langword="default"/> if nil value or not found.</returns>
 		T GetField(System::String^ key) {
 			return this->GetField<T>(key, true);
 		}
 
 		generic<class T>
+		/// <summary>
+		/// Get the value of specified table field and if specified, pop the value from the stack.
+		/// </summary>
+		/// <param name="key">The string identifier for the field.</param>
+		/// <param name="pop">Flag marking if the value should be popped from the stack.</param>
+		/// <returns>The field value or <see langword="default"/> if nil value or not found.</returns>
 		T GetField(System::String^ key, bool pop);
 
+		/// <summary>
+		/// Get the value of specified table field.
+		/// </summary>
+		/// <param name="key">The string identifier for the field.</param>
+		/// <returns>The field value or <see langword="null"/> if nil value or not found.</returns>
 		System::Object^ GetField(System::String^ key) {
 			return this->GetField(key, true);
 		}
 
+		/// <summary>
+		/// Get the value of specified table field and if specified, pop the value from the stack.
+		/// </summary>
+		/// <param name="key">The string identifier for the field.</param>
+		/// <param name="pop">Flag marking if the value should be popped from the stack.</param>
+		/// <returns>The field value or <see langword="null"/> if nil value or not found.</returns>
 		System::Object^ GetField(System::String^ key, bool pop);
 
 		// Inherited via IEnumerable
@@ -128,44 +163,66 @@ namespace Lua {
 	public:
 
 		/// <summary>
-		/// 
+		/// Create a new <see cref="LuaTable"/> instance and push it into the top of the Lua stack.
 		/// </summary>
-		/// <param name="L"></param>
-		/// <param name="arraySize"></param>
-		/// <param name="dictionarySize"></param>
-		/// <returns></returns>
-		static LuaTable^ New(LuaState^ L, int arraySize, int dictionarySize);
+		/// <param name="L">The state's stack to push table on to.</param>
+		/// <param name="arraySize">The amount of elements to make space for in the array section of the table.</param>
+		/// <param name="dictionarySize">The amount of elements to make space for in the key/value section of the table.</param>
+		/// <returns>A <see cref="LuaTable"/> instance representing the newly pushed stack element.</returns>
+		/// <exception cref="System::ArgumentOutOfRangeException"/>
+		static LuaTable New(LuaState^ L, int arraySize, int dictionarySize);
 		
 		/// <summary>
-		/// 
+		/// Create a new <see cref="LuaTable"/> instance and push it into the top of the Lua stack.
 		/// </summary>
-		/// <param name="L"></param>
-		/// <param name="length"></param>
-		/// <returns></returns>
-		static LuaTable^ NewArray(LuaState^ L, int length) {
+		/// <remarks>
+		/// Equivalent to calling <c language="cs">LuaTable.New(L, length, 0);</c>
+		/// </remarks>
+		/// <param name="L">The state's stack to push table on to.</param>
+		/// <param name="length">The expected amount of array elements.</param>
+		/// <returns>A <see cref="LuaTable"/> instance representing the newly pushed stack element.</returns>
+		/// <exception cref="System::ArgumentOutOfRangeException"/>
+		static LuaTable NewArray(LuaState^ L, int length) {
 			return New(L, length, 0);
 		}
 
 		/// <summary>
-		/// 
+		/// Create a new <see cref="LuaTable"/> instance and push it into the top of the Lua stack.
 		/// </summary>
-		/// <param name="L"></param>
-		/// <param name="count"></param>
-		/// <returns></returns>
-		static LuaTable^ NewHashTable(LuaState^ L, int count) {
+		/// <remarks>
+		/// Equivalent to calling <c language="cs">LuaTable.New(L, 0, count);</c>
+		/// </remarks>
+		/// <param name="L">The state's stack to push table on to.</param>
+		/// <param name="count">The amount of entries to pre-allocate space for.</param>
+		/// <returns>A <see cref="LuaTable"/> instance representing the newly pushed stack element.</returns>
+		/// <exception cref="System::ArgumentOutOfRangeException"/>
+		static LuaTable NewHashTable(LuaState^ L, int count) {
 			return New(L, 0, count);
 		}
 
 		/// <summary>
-		/// Create a <see cref="LuaTable"/> instance from the current top stack value.
+		/// Create a <see cref="LuaTable"/> instance from the stack value located at the specified offset.
 		/// </summary>
 		/// <param name="L">The state to get table from.</param>
+		/// <param name="offset">The offset from the top of the stack. A value of -1 is the stack top.</param>
+		/// <returns>A <see cref="LuaTable"/> instance representing the table located at the specified offset.</returns>
+		static LuaTable FromStack(LuaState^ L, int offset);
+
+		/// <summary>
+		/// Create a <see cref="LuaTable"/> instance from the current top stack value.
+		/// </summary>
+		/// <remarks>
+		/// Equivalent to calling <c language="cs">LuaTable.FromStack(L, -1);</c>
+		/// </remarks>
+		/// <param name="L">The state to get table from.</param>
 		/// <returns>The <see cref="LuaTable"/> currently at the top of the stack.</returns>
-		static LuaTable^ FromTop(LuaState^ L);
+		static LuaTable FromTop(LuaState^ L) {
+			return FromStack(L, -1);
+		}
 
 	private:
 
-		LuaTable(lua_State* state);
+		LuaTable(lua_State* state, int offset);
 
 		bool is_table_guard(int offset);
 
@@ -173,10 +230,11 @@ namespace Lua {
 
 		lua_State* L;
 		unsigned int iLen;
+		unsigned int iStackOffset;
 
 	internal:
 
-		static LuaTable^ from_top(lua_State* L);
+		static LuaTable from_top(lua_State* L, int offset);
 
 	};
 

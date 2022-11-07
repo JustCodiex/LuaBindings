@@ -2,13 +2,25 @@
 
 using Lua;
 
+using System.Diagnostics.CodeAnalysis;
+
 public class TableTest {
+
+    [NotNull]
+    LuaState state;
+
+    [SetUp]
+    public void CreateState() {
+        this.state = LuaState.NewState();
+    }
+
+    [TearDown]
+    public void CleanupState() {
+        this.state.Dispose();
+    }
 
     [Test]
     public void CanCreateTableWithFields() {
-
-        // Create state
-        using var state = LuaState.NewState();
 
         // Assert no exceptions occur
         Assert.DoesNotThrow(() => { 
@@ -29,28 +41,29 @@ public class TableTest {
     [Test]
     public void CanGetArrayFromTop() {
 
-        // Create state
-        using var state = LuaState.NewState();
-
         // Do string
         Assert.That(state.DoString("return { 1, 2, 3, 4 }"), Is.True);
 
-        // Get as table
-        LuaTable? table = null;
-        Assert.DoesNotThrow(() => {
-            table = LuaTable.FromTop(state);
+        Assert.Multiple(() => {
+            
+            // Get as table
+            LuaTable? table = null;
+
+            Assert.DoesNotThrow(() => {
+                table = LuaTable.FromTop(state);
+            });
+
+            // Grab count
+            int count = table!.Value.Count;
+
+            // Assert top has count of 4 elements
+            Assert.That(count, Is.EqualTo(4));
+
         });
-
-        // Assert top has count of 4 elements
-        Assert.That(table!.Count, Is.EqualTo(4));
-
     }
 
     [Test]
     public void CanIterateOverTop() {
-
-        // Create state
-        using var state = LuaState.NewState();
 
         // Do string
         Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.True);
@@ -84,9 +97,6 @@ public class TableTest {
     [Test]
     public void CanSetField() {
 
-        // Create state
-        using var state = LuaState.NewState();
-
         // Do string
         Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.True);
 
@@ -106,9 +116,6 @@ public class TableTest {
 
     [Test]
     public void CanPushHashtable() {
-
-        // Create state
-        using var state = LuaState.NewState();
 
         // Create table
         Hashtable table = new() {
@@ -136,9 +143,6 @@ public class TableTest {
 
     [Test]
     public void CanPushNestedHashTable() {
-
-        // Create state
-        using var state = LuaState.NewState();
 
         // Create table
         Hashtable table = new() {
@@ -173,9 +177,6 @@ public class TableTest {
     [Test]
     public void CanGetTable() {
 
-        // Create state
-        using var state = LuaState.NewState();
-
         // Do string
         Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.True);
 
@@ -193,9 +194,6 @@ public class TableTest {
     [Test]
     public void ThrowsIfNotTableOnTop() {
 
-        // Create state
-        using var state = LuaState.NewState();
-
         // Push a string
         state.PushString("Not a table");
 
@@ -209,6 +207,32 @@ public class TableTest {
             Assert.That(ex.Expected, Is.EqualTo(LuaType.Table));
             Assert.That(ex.Found, Is.EqualTo(LuaType.String));
             Assert.That(ex.Message, Is.EqualTo($"Lua runtime found {LuaType.String} when expecteing a {LuaType.Table}"));
+        });
+
+    }
+
+    [Test]
+    public void CanGetSecondTopStack() {
+
+        // Push table
+        state.PushTable(new Hashtable() {
+            { "A", 1.0 },
+            { "B", 2.0 }
+        });
+
+        // Push string
+        state.PushString("Not a table");
+
+        // Get table
+        var table = LuaTable.FromStack(state, -2);
+
+        // Make assertions
+        Assert.Multiple(() => {
+
+            // Assert field values
+            Assert.That(table.GetField<double>("A"), Is.EqualTo(1));
+            Assert.That(table.GetField<double>("B"), Is.EqualTo(2));
+
         });
 
     }
