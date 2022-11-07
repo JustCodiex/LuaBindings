@@ -74,6 +74,16 @@ Lua::LuaType Lua::LuaState::Type(int stackOffset) {
 	return static_cast<Lua::LuaType>(lua_type(this->pState, stackOffset));
 }
 
+System::String^ Lua::LuaState::Typename(int index) {
+
+	// Grab the typename in C string form
+	const char* pStr = lua_typename(this->pState, index);
+
+	// Return a managed version
+	return Marshal::PtrToStringAnsi(static_cast<System::IntPtr>(const_cast<char*>(pStr)));
+
+}
+
 double Lua::LuaState::GetNumber(int stackOffset) {
 	return lua_tonumber(this->pState, stackOffset);
 }
@@ -127,6 +137,10 @@ void Lua::LuaState::SetGlobal(System::String^ name) {
 
 void Lua::LuaState::PushNil() {
 	lua_pushnil(this->pState);
+}
+
+void Lua::LuaState::PushValue(int index) {
+	lua_pushvalue(this->pState, index);
 }
 
 void Lua::LuaState::PushInteger(int64_t value) {
@@ -222,6 +236,22 @@ void Lua::LuaState::Pop(int count) {
 
 int Lua::LuaState::GetTop() {
 	return lua_gettop(this->pState);
+}
+
+void Lua::LuaState::SetTop(int top) {
+	lua_settop(this->pState, top);
+}
+
+void Lua::LuaState::Remove(int index) {
+	lua_remove(this->pState, index);
+}
+
+void Lua::LuaState::Insert(int index) {
+	lua_insert(this->pState, index);
+}
+
+void Lua::LuaState::Replace(int index) {
+	lua_replace(this->pState, index);
 }
 
 Lua::LuaState^ Lua::LuaState::NewState() {

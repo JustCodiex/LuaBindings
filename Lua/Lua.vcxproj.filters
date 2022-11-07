@@ -239,9 +239,6 @@
     <ClCompile Include="lua\lzio.cpp">
       <Filter>Source Files\lua</Filter>
     </ClCompile>
-    <ClCompile Include="LuaLib.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="LuaTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -2,9 +2,6 @@
 
 using Lua;
 
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
-
 public class FunctionTests {
 
     [NotNull]
@@ -152,6 +149,43 @@ public class FunctionTests {
             Assert.That(x, Is.EqualTo(2));
             Assert.That(y, Is.EqualTo(-2.5));
         });
+
+    }
+
+    [Test]
+    public void CanInvokeCallbacksInCSharpFunction() {
+
+        // Import the math functions
+        Assert.That(state.DoFile("Sample\\funky.lua"), Is.True);
+
+        // Define caller
+        state.PushCSharpFunction("caller", L => {
+
+            // Bring mul up (since sum = -1, mul = -2);
+            L.Insert(-2);
+
+            // Grab
+            double mulResult = LuaFunction.FromTop(L).Invoke<double>(5.0, 7.0);
+
+            // Assert
+            Assert.Multiple(() => {
+                Assert.That(mulResult, Is.EqualTo(35.0));
+                Assert.That(L.Top, Is.EqualTo(1));
+            });
+
+            // Invoke it and Push it back (TODO: Leave it as an option to keep the result(s) on the stack)
+            L.PushNumber(LuaFunction.FromTop(L).Invoke<double>(mulResult, 5.0, 1.0, 0.5, 0.25, 0.125));
+
+            // Return top
+            return 1;
+
+        });
+
+        // Invoke it
+        double d = state.DoString<double>("return caller(mul, sum)");
+
+        // Assert correct result
+        Assert.That(d, Is.EqualTo(41.875));
 
     }
 

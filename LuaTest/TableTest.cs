@@ -2,8 +2,6 @@
 
 using Lua;
 
-using System.Diagnostics.CodeAnalysis;
-
 public class TableTest {
 
     [NotNull]

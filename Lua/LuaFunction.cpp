@@ -1,6 +1,6 @@
 #include "LuaFunction.hpp"
 #include "LuaException.hpp"
-#include "lua/luabind.hpp"
+#include "LuaState.h"
 #include "LuaMarshal.h"
 
 System::Object^ Lua::LuaFunction::Invoke(int resultValueCount, ... array<System::Object^>^ args) {
@@ -41,7 +41,7 @@ T Lua::LuaFunction::Invoke(... array<System::Object^>^ args) {
 	
 	// If not a tuple, just pop top element as return value
 	if (!isTuple) {
-		return safe_cast<T>(LuaMarshal::MarshalStackValue(this->L, -1));	
+		return safe_cast<T>(LuaMarshal::MarshalTopStackAndPop(this->L));
 	}
 	
 	// Collect values from stack
@@ -89,4 +89,15 @@ Lua::LuaFunction Lua::LuaFunction::from_top(lua_State* L, int idx) {
 		throw gcnew Lua::LuaTypeExpectedException(static_cast<LuaType>(lua_type(L, idx)), LuaType::Function);
 	}
 	return LuaFunction(L, idx);
+}
+
+bool Lua::LuaFunction::IsCallable::get() {
+	if (this->iStackOffset != -1) {
+		return false;
+	}
+	return lua_isfunction(this->L, this->iStackOffset);
+}
+
+Lua::LuaFunction Lua::LuaFunction::FromTop(LuaState^ L) {
+	return from_top(L->get_state(), -1);
 }

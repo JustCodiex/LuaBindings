@@ -69,6 +69,21 @@ namespace Lua {
 		LuaType Type(int stackOffset);
 
 		/// <summary>
+		/// Get the Lua typename of the top element.
+		/// </summary>
+		/// <returns>The lua typename of the top element.</returns>
+		System::String^ Typename() {
+			return this->Typename(-1);
+		}
+
+		/// <summary>
+		/// Get the typename of the specified stack element.
+		/// </summary>
+		/// <param name="index">The index of the stack value to get typename of.</param>
+		/// <returns>The Lua name for specified value type.</returns>
+		System::String^ Typename(int index);
+
+		/// <summary>
 		/// 
 		/// </summary>
 		/// <returns></returns>
@@ -179,15 +194,21 @@ namespace Lua {
 		void PushTable(System::Collections::Hashtable^ table);
 
 		/// <summary>
-		/// Push a C# method on to the top of the stack.
+		/// Push a C# method onto the top of the stack.
 		/// </summary>
 		/// <param name="func">The C# function to push onto the stack.</param>
 		void PushCSharpFunction(LuaFunctionDelegate^ func);
 
 		/// <summary>
-		/// 
+		/// Push a nil (<see langword="null"/>) value onto the stack.
 		/// </summary>
 		void PushNil();
+
+		/// <summary>
+		/// Push a copy of the top stack element onto the stack at the specified index.
+		/// </summary>
+		/// <param name="index">The stack index to push copy to.</param>
+		void PushValue(int index);
 
 		/// <summary>
 		/// 
@@ -226,10 +247,56 @@ namespace Lua {
 		void Pop(int count);
 
 		/// <summary>
-		/// 
+		/// Returns the number of elements on the stack, which is also the index of the top element.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>The number of elements on the stack.</returns>
 		int GetTop();
+
+		/// <summary>
+		/// Set the top index (number of elements) on the stack to the specified value. 
+		/// If the new top value is lower that the previous value; the top values are discarded. Otherwise, the stack is populated with nil values to get the new size.
+		/// </summary>
+		/// <example>
+		/// The stack can be cleared with
+		/// <code>
+		/// L.SetTop(0);
+		/// </code>
+		/// </example>
+		/// <remarks>
+		/// Using negative values is allowed and will set the stack position to the specified index. A shortcut for this is <see cref="LuaState::Pop(int count)"/>.
+		/// </remarks>
+		/// <param name="top">The new amount of stack values.</param>
+		void SetTop(int top);
+
+		/// <summary>
+		/// Remove the element at the specified index, shifting down all elements on the top of the specified index to fill the gap.
+		/// </summary>
+		/// <param name="index">The index of the stack element to remove.</param>
+		void Remove(int index);
+
+		/// <summary>
+		/// Move the top element to the specified stack index, shifting up all elements on top of that position to open space.
+		/// </summary>
+		/// <param name="index">The index of the place to insert top value into.</param>
+		void Insert(int index);
+
+		/// <summary>
+		/// Pops a value from the top and sets it as the value at the specified index without moving anything.
+		/// </summary>
+		/// <param name="index">The stack index to replace with top value.</param>
+		void Replace(int index);
+
+	public:
+
+		/// <summary>
+		/// Get the current amount of items on the stack.
+		/// </summary>
+		/// <remarks>
+		/// Equivalent to calling <c>L.GetTop()</c>
+		/// </remarks>
+		property int Top {
+			int get() { return this->GetTop(); }
+		}
 
 	public:
 

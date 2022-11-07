@@ -2,6 +2,10 @@
 	return a + b;
 end
 
+function mul(a,b)
+	return a * b;
+end
+
 function sum(...)
 	local args = { ... };
 	local n = 0;

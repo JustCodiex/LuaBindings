@@ -4,6 +4,8 @@ struct lua_State;
 
 namespace Lua {
 
+	ref class LuaState;
+
 	/// <summary>
 	/// Struct representing a lua function stored on the stack.
 	/// </summary>
@@ -24,6 +26,23 @@ namespace Lua {
 		void Call(int argc, int retc);
 
 		bool ProtectedCall(int argc, int retc);
+
+		property bool IsCallable {
+			bool get();
+		}
+
+		property int StackIndex {
+			int get() { return this->iStackOffset; }
+		}
+
+	public:
+
+		/// <summary>
+		/// Create a <see cref="LuaFunction"/> instance from the current top stack value.
+		/// </summary>
+		/// <param name="L">The state to get function from.</param>
+		/// <returns>The <see cref="LuaFunction"/> currently at the top of the stack.</returns>
+		static LuaFunction FromTop(LuaState^ L);
 
 	private:
 

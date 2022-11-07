@@ -59,7 +59,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LuaFunction.cpp" />
-    <ClCompile Include="LuaLib.cpp" />
     <ClCompile Include="LuaMarshal.cpp" />
     <ClCompile Include="LuaState.cpp" />
     <ClCompile Include="LuaTable.cpp" />
