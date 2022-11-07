@@ -1,15 +1,18 @@
 #include "LuaMarshal.h"
-#include "LuaType.h"
 #include "LuaTable.h"
+#include "LuaFunction.hpp"
 #include "lua/luabind.hpp"
 #include "CLIMacros.h"
 
 using namespace System::Runtime::InteropServices;
 
 System::Object^ Lua::LuaMarshal::MarshalStackValue(lua_State* L, int idx) {
-
 	LuaType lTy = static_cast<LuaType>(lua_type(L, idx));
-	switch (lTy) {
+	return MarshalStackValue(L, lTy, idx);
+}
+
+System::Object^ Lua::LuaMarshal::MarshalStackValue(lua_State* L, LuaType t, int idx) {
+	switch (t) {
 		case Lua::LuaType::Nil:
 			return nullptr;
 		case Lua::LuaType::Boolean:
@@ -21,11 +24,13 @@ System::Object^ Lua::LuaMarshal::MarshalStackValue(lua_State* L, int idx) {
 		case Lua::LuaType::String:
 			return Marshal::PtrToStringAnsi(static_cast<System::IntPtr>(const_cast<char*>(lua_tostring(L, idx))));
 		case Lua::LuaType::Table: {
-			LuaTable^ table = LuaTable::from_top(L, -1);
-			return safe_cast<System::Object^>(table->ToHashtable());
+			LuaTable table = LuaTable::from_top(L, -1);
+			return safe_cast<System::Object^>(table.ToHashtable());
 		}
-		case Lua::LuaType::Function:
-			throw gcnew System::NotImplementedException();
+		case Lua::LuaType::Function: {
+			LuaFunction funk = LuaFunction::from_top(L, -1);
+			return safe_cast<System::Object^>(funk);
+		}
 		case Lua::LuaType::UserData:
 			throw gcnew System::NotImplementedException();
 		case Lua::LuaType::Thread:
@@ -33,6 +38,19 @@ System::Object^ Lua::LuaMarshal::MarshalStackValue(lua_State* L, int idx) {
 		default:
 			throw gcnew System::NotSupportedException();
 	}
+
+}
+
+System::Object^ Lua::LuaMarshal::MarshalTopStackAndPop(lua_State* L) {
+
+	// Marshal current top
+	auto result = MarshalStackValue(L, -1);
+	
+	// Pop it
+	lua_pop(L, 1);
+
+	// Return result
+	return result;
 
 }
 
@@ -90,5 +108,13 @@ void Lua::LuaMarshal::MarshalHashTableToStack(lua_State* L, System::Collections:
 		lua_settable(L, -3);
 
 	}
+
+}
+
+generic<class T>
+T Lua::LuaMarshal::ArrayToTuple(array<System::Object^>^ values) {
+
+	// Return using activator (a saving grace)
+	return safe_cast<T>(System::Activator::CreateInstance(T::typeid, values));
 
 }

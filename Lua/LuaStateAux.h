@@ -1,5 +1,6 @@
 #pragma once
 #include "LuaState.h"
+#include "LuaMarshal.h"
 
 namespace Lua {
 
@@ -24,7 +25,8 @@ namespace Lua {
 			if (!state->DoString(lStr)) {
 				throw gcnew System::Exception(lStr);
 			}
-			LuaType typ = state->Type();
+			return safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), -1));
+			/*LuaType typ = state->Type();
 			switch (typ) {
 				case Lua::LuaType::Nil:
 					return T();
@@ -47,7 +49,7 @@ namespace Lua {
 				default:
 					break;
 			}
-			throw gcnew System::Exception(lStr);
+			throw gcnew System::Exception(lStr);*/
 		}
 
 		generic <class T>
@@ -60,7 +62,9 @@ namespace Lua {
 		/// <param name="name"></param>
 		/// <returns></returns>
 		static T GetGlobal(LuaState^ state, System::String^ name) {
-			auto luaType = state->GetGlobal(name);
+			auto t = state->GetGlobal(name);
+			return safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), t, -1));
+			/*auto luaType = ;
 			switch (luaType) {
 				case Lua::LuaType::Nil:
 					return T();
@@ -83,7 +87,7 @@ namespace Lua {
 				default:
 					break;
 			}
-			throw gcnew System::Exception(name);
+			throw gcnew System::Exception(name);*/
 		}
 
 		[System::Runtime::CompilerServices::ExtensionAttribute]

@@ -2,13 +2,26 @@
 
 using Lua;
 
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+
 public class FunctionTests {
+
+    [NotNull]
+    LuaState state;
+
+    [SetUp]
+    public void CreateState() {
+        this.state = LuaState.NewState();
+    }
+
+    [TearDown]
+    public void CleanupState() {
+        this.state.Dispose();
+    }
 
     [Test]
     public void CanInvokeDelegate() {
-
-        // Create new state
-        using var state = LuaState.NewState();
 
         // Flag
         bool wasInvoked = false;
@@ -41,9 +54,6 @@ public class FunctionTests {
     [Test]
     public void CanInvokeDelegateWithReturns() {
 
-        // Create new state
-        using var state = LuaState.NewState();
-
         // Define our function
         int test(LuaState L) {
             
@@ -69,9 +79,6 @@ public class FunctionTests {
     [Test]
     public void CanInvokeDelegateWithReturnsAndArgs() {
 
-        // Create new state
-        using var state = LuaState.NewState();
-
         // Push
         state.PushCSharpFunction("test", L => {
 
@@ -89,6 +96,62 @@ public class FunctionTests {
 
         // Invoke it
         Assert.That(state.DoString<double>("return test(10, 5)"), Is.EqualTo(5));
+
+    }
+
+    [Test]
+    public void CanInvokeAddFunction() {
+
+        // Do a file with a function
+        Assert.That(state.DoFile("Sample\\funky.lua"), Is.True);
+
+        // Get global
+        LuaFunction add = state.GetGlobal<LuaFunction>("add");
+
+        // Invoke it
+        double result = add.Invoke<double>(1.0, 2.0);
+
+        // Assert result
+        Assert.That(result, Is.EqualTo(3));
+
+    }
+
+    [Test]
+    public void CanInvokeSumFunction() {
+
+        // Do a file with a function
+        Assert.That(state.DoFile("Sample\\funky.lua"), Is.True);
+
+        // Get global
+        LuaFunction sum = state.GetGlobal<LuaFunction>("sum");
+
+        // Invoke it
+        double result = sum.Invoke<double>(1.0, 2.0, 3.5, 9.0);
+
+        // Assert result
+        Assert.That(result, Is.EqualTo(15.5));
+
+    }
+
+    [Test]
+    public void CanInvokeFunctionWithTupleReturn() {
+
+        // Do a file with a function
+        Assert.That(state.DoFile("Sample\\gcd.lua"), Is.True);
+
+        // Get global
+        LuaFunction gcd = state.GetGlobal<LuaFunction>("gcd");
+
+        // Invoke it
+        (double v, double x, double y) = gcd.Invoke<(double, double, double)>(5.0, 2.0);
+
+        // Assert
+        Assert.Multiple(() => {
+
+            Assert.That(v, Is.EqualTo(1));
+            Assert.That(x, Is.EqualTo(2));
+            Assert.That(y, Is.EqualTo(-2.5));
+        });
 
     }
 

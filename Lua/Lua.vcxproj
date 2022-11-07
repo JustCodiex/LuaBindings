@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="CLIMacros.h" />
     <ClInclude Include="LuaException.hpp" />
+    <ClInclude Include="LuaFunction.hpp" />
     <ClInclude Include="LuaLib.h" />
     <ClInclude Include="LuaMarshal.h" />
     <ClInclude Include="LuaState.h" />
@@ -57,6 +58,7 @@
     <ClInclude Include="lua\lzio.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="LuaFunction.cpp" />
     <ClCompile Include="LuaLib.cpp" />
     <ClCompile Include="LuaMarshal.cpp" />
     <ClCompile Include="LuaState.cpp" />
