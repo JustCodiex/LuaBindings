@@ -106,6 +106,19 @@ System::String^ Lua::LuaState::GetString(int stackOffset) {
 
 }
 
+System::Object^ Lua::LuaState::GetUserdata(int stackOffset) {
+
+	// Get userdata
+	uint64_t* userdataPtr = static_cast<uint64_t*>(lua_touserdata(this->pState, stackOffset));
+
+	// Get identifier
+	uint64_t identifier = *userdataPtr;
+
+	// Ask marshal to get instance
+	return LuaMarshal::GetUserdata(identifier);
+
+}
+
 Lua::LuaType Lua::LuaState::GetGlobal(System::String^ name) {
 
 	// Grab C++ string
@@ -222,12 +235,64 @@ void Lua::LuaState::PushCSharpFunction(LuaFunctionDelegate^ func) {
 
 }
 
+void Lua::LuaState::PushLightUserdata(System::Object^ obj) {
+
+	// Get the ID for userdata
+	uint64_t* userdataId = LuaMarshal::CreateUserdata(obj);
+
+	// Push it as light userdata
+	lua_pushlightuserdata(this->pState, userdataId);
+
+}
+
+void Lua::LuaState::NewUserdata(System::Object^ obj) {
+
+	// Get the ID for userdata
+	uint64_t* userdataId = LuaMarshal::CreateUserdata(obj);
+
+	// Get the userdata as a pointer
+	uint64_t* lValue = static_cast<uint64_t*>(lua_newuserdata(this->pState, sizeof(uint64_t)));
+
+	// Assign value
+	*lValue = *userdataId;
+
+}
+
 Lua::LuaTable Lua::LuaState::CreateTable(int arraySize, int dictionarySize) {
 	return LuaTable::New(this, arraySize, dictionarySize);
 }
 
 Lua::LuaTable Lua::LuaState::CreateTable(System::Collections::Hashtable^ table) {
 	throw gcnew System::NotImplementedException();
+}
+
+Lua::LuaTable Lua::LuaState::NewMetatable(System::String^ name, [System::Runtime::InteropServices::OutAttribute] bool% alreadyExists) {
+
+	// Get unmanaged string
+	__UnmanagedString(strPtr, name, pLStr);
+
+	// Set
+	alreadyExists = !luaL_newmetatable(this->pState, pLStr);
+
+	// Free
+	__UnmangedFreeString(strPtr);
+
+	// Return from top
+	return LuaTable::from_top(this->pState, -1);
+
+}
+
+void Lua::LuaState::SetMetatable(System::String^ name) {
+
+	// Get unmanaged string
+	__UnmanagedString(strPtr, name, pLStr);
+
+	// Set the metatable of top element
+	luaL_setmetatable(this->pState, pLStr);
+
+	// Free
+	__UnmangedFreeString(strPtr);
+
 }
 
 void Lua::LuaState::Pop(int count) {
@@ -252,6 +317,14 @@ void Lua::LuaState::Insert(int index) {
 
 void Lua::LuaState::Replace(int index) {
 	lua_replace(this->pState, index);
+}
+
+void Lua::LuaState::Call(int argc, int retc) {
+	lua_call(this->pState, argc, retc);
+}
+
+int Lua::LuaState::PCall(int argc, int retc) {
+	return lua_pcall(this->pState, argc, retc, 0);
 }
 
 Lua::LuaState^ Lua::LuaState::NewState() {

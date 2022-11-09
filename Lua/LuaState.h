@@ -146,6 +146,42 @@ namespace Lua {
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <returns></returns>
+		System::Object^ GetUserdata() {
+			return this->GetUserdata(-1);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="stackOffset"></param>
+		/// <returns></returns>
+		System::Object^ GetUserdata(int stackOffset);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		generic<class T>
+		T GetUserdata() {
+			return safe_cast<T>(this->GetUserdata(-1));
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="stackOffset"></param>
+		/// <returns></returns>
+		generic<class T>
+		T GetUserdata(int stackOffset) {
+			return safe_cast<T>(this->GetUserdata(stackOffset));
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="name"></param>
 		LuaType GetGlobal(System::String^ name);
 
@@ -211,6 +247,38 @@ namespace Lua {
 		void PushValue(int index);
 
 		/// <summary>
+		/// Push a light userdata instance onto the stack.
+		/// </summary>
+		/// <param name="obj">The object to push onto the stack.</param>
+		void PushLightUserdata(System::Object^ obj);
+
+		/// <summary>
+		/// Push a ligt userdata instance onto the stack.
+		/// </summary>
+		/// <typeparam name="T">The specific type of object to push</typeparam>
+		/// <param name="value">The object to push onto the stack.</param>
+		generic<class T>
+		void PushLightUserdata(T value) {
+			this->PushLightUserdata(safe_cast<System::Object^>(value));
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="obj"></param>
+		void NewUserdata(System::Object^ obj);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="value"></param>
+		generic<class T> where T : ref class
+		void NewUserdata(T value) {
+			this->NewUserdata(safe_cast<System::Object^>(value));
+		}
+
+		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="arraySize"></param>
@@ -232,6 +300,20 @@ namespace Lua {
 		LuaTable CreateTable() {
 			return this->CreateTable(0, 0);
 		}
+
+		/// <summary>
+		/// Create a new metatable associated with the specified name.
+		/// </summary>
+		/// <param name="name">The name of the metatable.</param>
+		/// <param name="alreadyExists">Get if the metatable already exists.</param>
+		/// <returns>The <see cref="LuaTable"/> instance that was pushed onto the stack.</returns>
+		LuaTable NewMetatable(System::String^ name, [System::Runtime::InteropServices::OutAttribute] bool% alreadyExists);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="name"></param>
+		void SetMetatable(System::String^ name);
 
 		/// <summary>
 		/// Pop the current stack value.
@@ -285,6 +367,21 @@ namespace Lua {
 		/// </summary>
 		/// <param name="index">The stack index to replace with top value.</param>
 		void Replace(int index);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="argc"></param>
+		/// <param name="retc"></param>
+		void Call(int argc, int retc);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="argc"></param>
+		/// <param name="retc"></param>
+		/// <returns></returns>
+		int PCall(int argc, int retc);
 
 	public:
 

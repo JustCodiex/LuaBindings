@@ -118,3 +118,42 @@ T Lua::LuaMarshal::ArrayToTuple(array<System::Object^>^ values) {
 	return safe_cast<T>(System::Activator::CreateInstance(T::typeid, values));
 
 }
+
+System::Object^ Lua::LuaMarshal::GetUserdata(uint64_t dataId) {
+	
+	// Check if key is contained
+	if (__identifierToUserdata->ContainsKey(dataId))
+		return __identifierToUserdata[dataId];
+
+	// Return null
+	return nullptr;
+
+}
+
+uint64_t* Lua::LuaMarshal::CreateUserdata(System::Object^ obj) {
+	
+	// Get map
+	std::map<uint64_t, uint64_t*> ptrmap = *__managedPointers;
+
+	// Return if already contained
+	if (__userdataToIdentifier->ContainsKey(obj)) {
+		uint64_t k = safe_cast<uint64_t>(__userdataToIdentifier[obj]);;
+		uint64_t* ptr = ptrmap[k];
+		return ptr;
+	}
+
+	// Grab identifier
+	uint64_t identifier = __userdataIdentifierCounter++;
+	
+	// Register
+	__userdataToIdentifier->Add(obj, identifier);
+	__identifierToUserdata->Add(identifier, obj);
+
+	// Store
+	uint64_t* ptr = new uint64_t(identifier);
+	ptrmap[identifier] = ptr;
+
+	// Return identifer
+	return ptr;
+
+}

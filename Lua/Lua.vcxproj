@@ -28,6 +28,7 @@
     <ClInclude Include="LuaStateAux.h" />
     <ClInclude Include="LuaTable.h" />
     <ClInclude Include="LuaType.h" />
+    <ClInclude Include="LuaUserdata.h" />
     <ClInclude Include="lua\lapi.hpp" />
     <ClInclude Include="lua\lauxlib.hpp" />
     <ClInclude Include="lua\lcode.hpp" />
@@ -62,6 +63,7 @@
     <ClCompile Include="LuaMarshal.cpp" />
     <ClCompile Include="LuaState.cpp" />
     <ClCompile Include="LuaTable.cpp" />
+    <ClCompile Include="LuaUserdata.cpp" />
     <ClCompile Include="lua\lapi.cpp" />
     <ClCompile Include="lua\lauxlib.cpp" />
     <ClCompile Include="lua\lbaselib.cpp" />
