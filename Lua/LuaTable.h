@@ -1,4 +1,6 @@
 #pragma once
+#include "LuaFunction.hpp"
+#include "LuaException.hpp"
 
 struct lua_State;
 
@@ -46,7 +48,7 @@ namespace Lua {
 		};
 
 		/// <summary>
-		/// 
+		/// Supports a simple iteration over a <see cref="LuaTable"/> instance.
 		/// </summary>
 		ref struct Iterator : public System::Collections::Generic::IEnumerator<KeyValue> {
 		public:
@@ -103,32 +105,41 @@ namespace Lua {
 		void SetField(System::String^ key, double value);
 
 		/// <summary>
+		/// Set the field value to the specified CSharp function.
+		/// </summary>
+		/// <param name="key">The string identifier for the field.</param>
+		/// <param name="function">Function delegate to set.</param>
+		void SetField(System::String^ key, LuaFunctionDelegate^ function);
+
+		/// <summary>
 		/// Set the value of specified table field using the current top value as field value.
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		void SetField(System::String^ key);
 
-		generic<class T>
 		/// <summary>
-		/// Get the value of specified table field.
+		/// Get the value of specified table field and pop it immediately from the stack.
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		/// <returns>The field value or <see langword="default"/> if nil value or not found.</returns>
+		/// <exception cref="LuaRuntimeException"/>
+		generic<class T>
 		T GetField(System::String^ key) {
 			return this->GetField<T>(key, true);
 		}
 
-		generic<class T>
 		/// <summary>
 		/// Get the value of specified table field and if specified, pop the value from the stack.
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		/// <param name="pop">Flag marking if the value should be popped from the stack.</param>
 		/// <returns>The field value or <see langword="default"/> if nil value or not found.</returns>
+		/// <exception cref="LuaRuntimeException"/>
+		generic<class T>
 		T GetField(System::String^ key, bool pop);
 
 		/// <summary>
-		/// Get the value of specified table field.
+		/// Get the value of specified table field and pop it immediately from the stack.
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		/// <returns>The field value or <see langword="null"/> if nil value or not found.</returns>
@@ -206,6 +217,7 @@ namespace Lua {
 		/// <param name="L">The state to get table from.</param>
 		/// <param name="offset">The offset from the top of the stack. A value of -1 is the stack top.</param>
 		/// <returns>A <see cref="LuaTable"/> instance representing the table located at the specified offset.</returns>
+		/// <exception cref="LuaTypeExpectedException"/>
 		static LuaTable FromStack(LuaState^ L, int offset);
 
 		/// <summary>
@@ -216,9 +228,56 @@ namespace Lua {
 		/// </remarks>
 		/// <param name="L">The state to get table from.</param>
 		/// <returns>The <see cref="LuaTable"/> currently at the top of the stack.</returns>
+		/// <exception cref="LuaTypeExpectedException"/>
 		static LuaTable FromTop(LuaState^ L) {
 			return FromStack(L, -1);
 		}
+
+	public:
+
+		/// <summary>
+		/// Represents the constant string for the metatable "__add" operation, overriding the <c>+</c> operator when used on value with a metatable defining a "__add" function.
+		/// </summary>
+		/// <remarks>
+		/// A metatable function for <b>__add</b> takes two arguments:
+		/// <c>
+		/// __add = function(left, right) ... end
+		/// </c>
+		/// </remarks>
+		literal System::String^ METATABLE_ADD = "__add";
+
+		/// <summary>
+		/// Represents the constant string for the metatable "__sub" operation, overriding the <c>-</c> operator when used on value with a metatable defining a "__sub" function.
+		/// </summary>
+		/// <remarks>
+		/// A metatable function for <b>__sub</b> takes two arguments:
+		/// <c>
+		/// __sub = function(left, right) ... end
+		/// </c>
+		/// </remarks>
+		literal System::String^ METATABLE_SUB = "__sub";
+
+		/// <summary>
+		/// Represents the constant string for the metatable "__mul" operation, overriding the <c>*</c> operator when used on value with a metatable defining a "__mul" function.
+		/// </summary>
+		/// <remarks>
+		/// A metatable function for <b>__mul</b> takes two arguments:
+		/// <c>
+		/// __mul = function(left, right) ... end
+		/// </c>
+		/// </remarks>
+		literal System::String^ METATABLE_MUL = "__mul";
+
+		/// <summary>
+		/// Represents the constant string for the metatable "__div" operation, overriding the <c>/</c> operator when used on value with a metatable defining a "__div" function.
+		/// </summary>
+		/// <remarks>
+		/// A metatable function for <b>__div</b> takes two arguments:
+		/// <c>
+		/// __div = function(left, right) ... end
+		/// </c>
+		/// </remarks>
+		literal System::String^ METATABLE_DIV = "__div";
 
 	private:
 

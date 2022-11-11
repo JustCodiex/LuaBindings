@@ -141,6 +141,25 @@ void Lua::LuaTable::SetField(System::String^ key, double value) {
 
 }
 
+void Lua::LuaTable::SetField(System::String^ key, LuaFunctionDelegate^ function) {
+
+    // Ensure table
+    __TABLEGUARD(this->iStackOffset);
+
+    // Grab key
+    __UnmanagedString(kP, key, pKey);
+
+    // Push delegate
+    LuaMarshal::CreateCSharpLuaFunction(this->L, function);
+
+    // Set field
+    lua_setfield(this->L, this->iStackOffset - 1, pKey);
+
+    // Free key
+    __UnmangedFreeString(kP);
+
+}
+
 void Lua::LuaTable::SetField(System::String^ key) {
 
     // Ensure table
@@ -218,30 +237,18 @@ System::Object^ Lua::LuaTable::GetField(System::String^ key, bool popValue) {
 
 generic <class T>
 T Lua::LuaTable::GetField(System::String^ key, bool popValue) {
-
-    // Ensure table
-    __TABLEGUARD(this->iStackOffset);
-
-    // Grab key
-    __UnmanagedString(kP, key, pKey);
-
-    // Get the field
-    lua_getfield(this->L, this->iStackOffset, pKey);
-
-    // Free key
-    __UnmangedFreeString(kP);
-
-    // Grab val
-    System::Object^ fldVal = LuaMarshal::MarshalStackValue(this->L, -1);
-
-    // Pop top
-    if (popValue) {
-        lua_pop(this->L, 1);
+    System::Object^ v = this->GetField(key, false);
+    T t = T();
+    try {
+        t = safe_cast<T>(v);
+    } catch (System::InvalidCastException^ icex) {
+        System::String^ err = System::String::Format("Lua field value type {0} cannot be cast to managed type {1}.", LuaMarshal::ToLuaType(this->L, -1), T::typeid->FullName);
+        throw gcnew LuaRuntimeException(err, icex);
     }
-
-    // Return
-    return safe_cast<T>(fldVal);
-
+    if (popValue) {
+        LuaState::pop_generic_safe(this->L, 1);
+    }
+    return t;
 }
 
 Lua::LuaTable Lua::LuaTable::New(LuaState^ L, int arraySize, int dictionarySize) {

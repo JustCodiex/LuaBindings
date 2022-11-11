@@ -186,53 +186,8 @@ void Lua::LuaState::PushTable(System::Collections::Hashtable^ table) {
 	LuaMarshal::MarshalHashTableToStack(this->pState, table);
 }
 
-typedef int (*CSLDelegate)(Lua::LuaState^ L);
-
-class CSharpClosure {
-public:
-	int invoke(lua_State* L) {
-		Lua::LuaState^ l = gcnew Lua::LuaState(L, false);
-		System::IntPtr ptr = System::IntPtr(static_cast<void*>(this->__funcPtr));
-		// This whole thing is dynamic and a pain point... (TODO: Revisit with more optimal solution)
-		auto delegate = Marshal::GetDelegateForFunctionPointer(ptr, Lua::LuaFunctionDelegate::typeid);
-		return safe_cast<int>(delegate->DynamicInvoke(l));
-	}
-	void set_func(CSLDelegate ptr) {
-		this->__funcPtr = ptr;
-	}
-private:
-	CSLDelegate __funcPtr;
-};
-
-int csharp_invoke_luahandle(lua_State* L) {
-	
-	// Grab delegate information
-	CSharpClosure* p = static_cast<CSharpClosure*>(lua_touserdata(L, lua_upvalueindex(1)));
-
-	// Create
-	int result = p->invoke(L);
-
-	// Invoke and return
-	return result;
-
-}
-
 void Lua::LuaState::PushCSharpFunction(LuaFunctionDelegate^ func) {
-
-	// Grab pointer
-	auto managedPointer = Marshal::GetFunctionPointerForDelegate(func);
-	CSLDelegate unmanagedDelegate = static_cast<CSLDelegate>(managedPointer.ToPointer());
-
-	// Grab delegate as pointer
-	CSharpClosure* closure = static_cast<CSharpClosure*>(lua_newuserdata(this->pState, sizeof(CSharpClosure)));
-	closure->set_func(unmanagedDelegate);
-
-	// Keep the delegate alive throughout this procedure
-	System::GC::KeepAlive(func);
-
-	// Push closure
-	lua_pushcclosure(this->pState, csharp_invoke_luahandle, 1);
-
+	LuaMarshal::CreateCSharpLuaFunction(this->pState, func);
 }
 
 void Lua::LuaState::PushLightUserdata(System::Object^ obj) {
@@ -386,4 +341,8 @@ Lua::LuaState^ Lua::LuaState::NewState(LuaLib libraries) {
 	// Return the new state
 	return gcnew LuaState(pState, true);
 
+}
+
+void Lua::LuaState::pop_generic_safe(lua_State* L, int amount) {
+	lua_pop(L, amount);
 }

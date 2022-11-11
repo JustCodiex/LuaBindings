@@ -1,5 +1,6 @@
 #include "LuaMarshal.h"
 #include "LuaTable.h"
+#include "LuaState.h"
 #include "LuaFunction.hpp"
 #include "lua/luabind.hpp"
 #include "CLIMacros.h"
@@ -31,8 +32,10 @@ System::Object^ Lua::LuaMarshal::MarshalStackValue(lua_State* L, LuaType t, int 
 			LuaFunction funk = LuaFunction::from_top(L, -1);
 			return safe_cast<System::Object^>(funk);
 		}
-		case Lua::LuaType::UserData:
-			throw gcnew System::NotImplementedException();
+		case Lua::LuaType::UserData: {
+			uint64_t* ptr = static_cast<uint64_t*>(lua_touserdata(L, idx));
+			return GetUserdata(*ptr);
+		}
 		case Lua::LuaType::Thread:
 			throw gcnew System::NotImplementedException();
 		default:
@@ -156,4 +159,57 @@ uint64_t* Lua::LuaMarshal::CreateUserdata(System::Object^ obj) {
 	// Return identifer
 	return ptr;
 
+}
+
+typedef int (*CSLDelegate)(Lua::LuaState^ L);
+
+class CSharpClosure {
+public:
+	int invoke(lua_State* L) {
+		Lua::LuaState^ l = gcnew Lua::LuaState(L, false);
+		System::IntPtr ptr = System::IntPtr(static_cast<void*>(this->__funcPtr));
+		// This whole thing is dynamic and a pain point... (TODO: Revisit with more optimal solution)
+		auto delegate = Marshal::GetDelegateForFunctionPointer(ptr, Lua::LuaFunctionDelegate::typeid);
+		return safe_cast<int>(delegate->DynamicInvoke(l));
+	}
+	void set_func(CSLDelegate ptr) {
+		this->__funcPtr = ptr;
+	}
+private:
+	CSLDelegate __funcPtr;
+};
+
+int csharp_invoke_luahandle(lua_State* L) {
+
+	// Grab delegate information
+	CSharpClosure* p = static_cast<CSharpClosure*>(lua_touserdata(L, lua_upvalueindex(1)));
+
+	// Create
+	int result = p->invoke(L);
+
+	// Invoke and return
+	return result;
+
+}
+
+void Lua::LuaMarshal::CreateCSharpLuaFunction(lua_State* L, LuaFunctionDelegate^ delegate) {
+
+	// Grab pointer
+	auto managedPointer = Marshal::GetFunctionPointerForDelegate(delegate);
+	CSLDelegate unmanagedDelegate = static_cast<CSLDelegate>(managedPointer.ToPointer());
+
+	// Grab delegate as pointer
+	CSharpClosure* closure = static_cast<CSharpClosure*>(lua_newuserdata(L, sizeof(CSharpClosure)));
+	closure->set_func(unmanagedDelegate);
+
+	// Keep the delegate alive throughout this procedure
+	System::GC::KeepAlive(delegate);
+
+	// Push closure
+	lua_pushcclosure(L, csharp_invoke_luahandle, 1);
+
+}
+
+Lua::LuaType Lua::LuaMarshal::ToLuaType(lua_State* L, int idx) {
+	return static_cast<LuaType>(lua_type(L, idx));
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lua/luabind.hpp"
+#include "LuaFunction.hpp"
 #include "LuaType.h"
 #include "LuaTable.h"
 #include "LuaLib.h"
@@ -8,12 +9,6 @@
 #include <stdint.h>
 
 namespace Lua {
-
-	/// <summary>
-	/// Delegate representing a function that can be invoked directly by lua.
-	/// </summary>
-	/// <param name="state">The Lua state the function was invoked in.</param>
-	public delegate int LuaFunctionDelegate(ref class LuaState^ state);
 
 	/// <summary>
 	/// Class representing the Lua thread state. This class cannot be inheritted.
@@ -144,51 +139,52 @@ namespace Lua {
 		System::String^ GetString(int stackOffset);
 
 		/// <summary>
-		/// 
+		/// Get the top userdata stack value as its .NET representation.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>The .NET instance instance represented by the Lua userdata.</returns>
 		System::Object^ GetUserdata() {
 			return this->GetUserdata(-1);
 		}
 
 		/// <summary>
-		/// 
+		/// Get the specified userdata stack value as its .NET representation.
 		/// </summary>
-		/// <param name="stackOffset"></param>
-		/// <returns></returns>
+		/// <param name="stackOffset">The stack index to get userdata instance from.</param>
+		/// <returns>The .NET instance represented by the Lua userdata.</returns>
 		System::Object^ GetUserdata(int stackOffset);
 
 		/// <summary>
-		/// 
+		/// Get the top userdata stack value as its <typeparamref name="T"/> representation.
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <returns></returns>
+		/// <typeparam name="T">The specific userdata type to get.</typeparam>
+		/// <returns>The Lua userdata-encapsulated <typeparamref name="T"/> instance</returns>
 		generic<class T>
 		T GetUserdata() {
 			return safe_cast<T>(this->GetUserdata(-1));
 		}
 
 		/// <summary>
-		/// 
+		/// Get the specified userdata stack value as its <typeparamref name="T"/> representation.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="stackOffset"></param>
-		/// <returns></returns>
+		/// <param name="stackOffset">The stack index to get userdata instance from.</param>
+		/// <returns>The Lua userdata-encapsulated <typeparamref name="T"/> instance</returns>
 		generic<class T>
 		T GetUserdata(int stackOffset) {
 			return safe_cast<T>(this->GetUserdata(stackOffset));
 		}
 
 		/// <summary>
-		/// 
+		/// Push the specified global variable onto the top of the stack.
 		/// </summary>
-		/// <param name="name"></param>
+		/// <param name="name">The name of the globale variable.</param>
+		/// <returns>The <see cref="LuaType"/> of the value pushed onto the stack. If the global variable does not exist a nil value is pushed onto the stack.</returns>
 		LuaType GetGlobal(System::String^ name);
 
 		/// <summary>
-		/// 
+		/// Pop the current top value from the stack and assign it the specified global name.
 		/// </summary>
-		/// <param name="name"></param>
+		/// <param name="name">The global name of the variable.</param>
 		void SetGlobal(System::String^ name);
 
 		/// <summary>
@@ -420,6 +416,13 @@ namespace Lua {
 		LuaState(lua_State* pL, bool shouldClose);
 
 		lua_State* get_state() { return this->pState; }
+
+		/// <summary>
+		/// (C++/CLI) Generic-safe stack pop operation.
+		/// </summary>
+		/// <param name="L">Lua state</param>
+		/// <param name="amount">Elements to pop</param>
+		static void pop_generic_safe(lua_State* L, int amount);
 
 	};
 

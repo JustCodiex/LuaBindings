@@ -7,6 +7,12 @@ namespace Lua {
 	ref class LuaState;
 
 	/// <summary>
+	/// Delegate representing a function that can be invoked directly by lua.
+	/// </summary>
+	/// <param name="state">The Lua state the function was invoked in.</param>
+	public delegate int LuaFunctionDelegate(LuaState^ state);
+
+	/// <summary>
 	/// Struct representing a lua function stored on the stack.
 	/// </summary>
 	public value class LuaFunction {

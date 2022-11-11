@@ -1,6 +1,7 @@
 #pragma once
 #include "LuaState.h"
 #include "LuaMarshal.h"
+#include "LuaException.hpp"
 
 namespace Lua {
 
@@ -21,73 +22,41 @@ namespace Lua {
 		/// <param name="state">The state to retrieve run code with.</param>
 		/// <param name="lStr">The lua string to load and run.</param>
 		/// <returns>The resulting .NET type.</returns>
+		/// <exception cref="LuaRuntimeException"/>
 		static T DoString(LuaState^ state, System::String^ lStr) {
 			if (!state->DoString(lStr)) {
-				throw gcnew System::Exception(lStr);
+				const char* pErrStr = lua_tostring(state->get_state(), -1);
+				System::String^ str = System::Runtime::InteropServices::Marshal::PtrToStringAnsi(static_cast<System::IntPtr>(const_cast<char*>(pErrStr)));
+				throw gcnew LuaRuntimeException(str);
 			}
-			return safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), -1));
-			/*LuaType typ = state->Type();
-			switch (typ) {
-				case Lua::LuaType::Nil:
-					return T();
-				case Lua::LuaType::Boolean:
-					return safe_cast<T>(state->GetBoolean());
-				case Lua::LuaType::LightUserData:
-					break;
-				case Lua::LuaType::Number:
-					return safe_cast<T>(state->GetNumber());
-				case Lua::LuaType::String:
-					return safe_cast<T>(state->GetString());
-				case Lua::LuaType::Table:
-					break;
-				case Lua::LuaType::Function:
-					break;
-				case Lua::LuaType::UserData:
-					break;
-				case Lua::LuaType::Thread:
-					break;
-				default:
-					break;
+			try {
+				return safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), -1));
+			} catch (System::InvalidCastException^ icex) {
+				System::String^ err = System::String::Format("Lua return value type {0} cannot be cast to managed type {1}.", state->Type(), T::typeid->FullName);
+				throw gcnew LuaRuntimeException(err, icex);
 			}
-			throw gcnew System::Exception(lStr);*/
+			return T();
 		}
 
 		generic <class T>
 		[System::Runtime::CompilerServices::ExtensionAttribute]
 		/// <summary>
-		/// 
+		/// Get the .NET value of the global Lua variable.
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="state"></param>
-		/// <param name="name"></param>
-		/// <returns></returns>
+		/// <typeparam name="T">The .NET type to convert Lua type into.</typeparam>
+		/// <param name="state">The lua state to get global variable from.</param>
+		/// <param name="name">The name of the global variable.</param>
+		/// <returns>A .NET instance representing the global variable.</returns>
+		/// <exception cref="LuaRuntimeException"/>
 		static T GetGlobal(LuaState^ state, System::String^ name) {
 			auto t = state->GetGlobal(name);
-			return safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), t, -1));
-			/*auto luaType = ;
-			switch (luaType) {
-				case Lua::LuaType::Nil:
-					return T();
-				case Lua::LuaType::Boolean:
-					return safe_cast<T>(state->GetBoolean());
-				case Lua::LuaType::LightUserData:
-					break;
-				case Lua::LuaType::Number:
-					return safe_cast<T>(state->GetNumber());
-				case Lua::LuaType::String:
-					return safe_cast<T>(state->GetString());
-				case Lua::LuaType::Table:
-					break;
-				case Lua::LuaType::Function:
-					break;
-				case Lua::LuaType::UserData:
-					break;
-				case Lua::LuaType::Thread:
-					break;
-				default:
-					break;
+			try {
+				return safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), t, -1));
+			} catch (System::InvalidCastException^ icex) {
+				System::String^ err = System::String::Format("Global lua type {0} cannot be cast to managed type {1}.", t, T::typeid->FullName);
+				throw gcnew LuaRuntimeException(err, icex);
 			}
-			throw gcnew System::Exception(name);*/
+			return T();
 		}
 
 		[System::Runtime::CompilerServices::ExtensionAttribute]

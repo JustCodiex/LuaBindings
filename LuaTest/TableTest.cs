@@ -235,4 +235,63 @@ public class TableTest {
 
     }
 
+    [Test]
+    public void CanSetMetatable() {
+
+        // Create meta table and assert it's new
+        LuaTable meta = state.NewMetatable("MetaTest", out bool exists);
+        Assert.That(exists, Is.False);
+
+        // Push metatable member
+        meta.SetField(LuaTable.METATABLE_MUL, L => {
+
+            // Grab ref to both
+            var lhs = LuaTable.FromStack(L, -2);
+            var rhs = LuaTable.FromStack(L, -1);
+
+            // Grab vals
+            var (x1, y1, z1) = (lhs.GetField<double>("x"), lhs.GetField<double>("y"), lhs.GetField<double>("z"));
+            var (x2, y2, z2) = (rhs.GetField<double>("x"), rhs.GetField<double>("y"), rhs.GetField<double>("z"));
+
+            // Compute dot
+            var dot = x1 * x2 + y1 * y2 + z1 * z2;
+
+            // Push
+            L.PushNumber(dot);
+
+            // Return one result
+            return 1;
+
+        });
+
+        // Pop metatable
+        state.Pop();
+
+        // Ensure stack is now empty
+        Assert.That(state.Top, Is.EqualTo(0));
+
+        // Create table a
+        state.PushTable(new() { { "x", 1.0 }, { "y", 2.0 }, { "z", 3.0 } });
+        state.SetMetatable("MetaTest");
+        state.SetGlobal("a");
+
+        // Ensure stack is now empty
+        Assert.That(state.Top, Is.EqualTo(0));
+
+        // Create table b
+        state.PushTable(new() { { "x", 1.0 }, { "y", 2.0 }, { "z", 3.0 } });
+        state.SetMetatable("MetaTest");
+        state.SetGlobal("b");
+
+        // Ensure stack is now empty
+        Assert.That(state.Top, Is.EqualTo(0));
+
+        // Invoke
+        double result = state.DoString<double>("return a * b");
+
+        // Assert result
+        Assert.That(result, Is.EqualTo(14));
+
+    }
+
 }

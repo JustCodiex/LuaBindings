@@ -1,5 +1,6 @@
 #pragma once
 #include "LuaType.h"
+#include "LuaFunction.hpp"
 #include <stdint.h>
 #include <map>
 
@@ -76,6 +77,16 @@ namespace Lua {
 		/// <param name="obj"></param>
 		/// <returns></returns>
 		static uint64_t* CreateUserdata(System::Object^ obj);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		static void CreateCSharpLuaFunction(lua_State* L, LuaFunctionDelegate^ delegate);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		static LuaType ToLuaType(lua_State* L, int idx);
 
 	public:
 

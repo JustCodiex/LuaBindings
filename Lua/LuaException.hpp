@@ -27,6 +27,29 @@ namespace Lua {
 	};
 
 	/// <summary>
+	/// Represents errors that occur during the Lua runtime.
+	/// </summary>
+	public ref class LuaRuntimeException : public LuaException {
+	public:
+		/// <summary>
+		/// Initialise a new instance of the <see cref="LuaRuntimeException"/> class with a default message. 
+		/// </summary>
+		LuaRuntimeException() : LuaException("Fatal Lua runtime exception occured") {}
+		/// <summary>
+		/// Initialise a new instance of the <see cref="LuaRuntimeException"/> class with a specified message.
+		/// </summary>
+		/// <param name="message">The message clarifying the exception.</param>
+		LuaRuntimeException(System::String^ message) : LuaException(message) {}
+		/// <summary>
+		/// Initialise a new instance of the <see cref="LuaRuntimeException"/> class with a specified message and a reference to the inner <see cref="System::Exception"/> that
+		/// caused the exception.
+		/// </summary>
+		/// <param name="message">The message clarifying the exception.</param>
+		/// <param name="innerException">The inner <see cref="System::Exception"/> that triggered this <see cref="LuaException"/>.</param>
+		LuaRuntimeException(System::String^ message, System::Exception^ innerException) : LuaException(message, innerException) {}
+	};
+
+	/// <summary>
 	/// Represents errors that occure during Lua execution where one type was expected but another was found.
 	/// </summary>
 	public ref class LuaTypeExpectedException : public LuaException {
