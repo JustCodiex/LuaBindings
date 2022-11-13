@@ -1,14 +1,14 @@
 # Lua Bindings
 Bring the powerful scripting language Lua into your C# applications!
 
-With Lua bindings it's possible to host the Lua runtime in a C# application and interact with Lua the same way C/C++ would interact with the Lua runtime. The Lua Bindings project brings additional functionalities to make feel more C#-ish.
+With Lua bindings it's possible to host the Lua runtime in a C# application and interact with Lua the same way C/C++ would interact with the Lua runtime. The Lua Bindings project brings additional functionalities to make working with the Lua Bindings feel more C#-ish.
 
-All use of this project falls under the [MIT license](LICENSE.txt) and can be freely used. Credits for the Lua runtime code go the original authors of Lua. The [Lua license](LUA_LICENSE.txt) is also MIT.
+All use of this project falls under the [MIT license](LICENSE.txt) and can be freely used. Credits for the Lua C implementation code included within this project go the original authors of Lua. The [Lua license](LUA_LICENSE.txt) is also MIT.
 
 The most recent version of Lua Bindings use Lua v5.4.4 as the runtime.
 
 ## Getting Started
-Using Lua Bindings is easy and if works almost exactly like the C API for Lua. A basic hello world program using Lua Bindings would be:
+Using Lua Bindings is easy and it works almost exactly like the C API for Lua. A basic hello world program using Lua Bindings would be:
 ```csharp
 using Lua;
 
@@ -18,15 +18,15 @@ LuaState L = LuaState.NewState();
 // Print Hello World to the console using Lua
 L.DoString("print \"Hello World\"");
 ```
-Lua Bindings also offer a seamless way of interacting with the Lua runtime, while also maintaining the familiarities with the C API. Meaning Lua Bindings offer the same stack manipulation capabilities:
+Lua Bindings also offer a seamless way of interacting with the Lua runtime, while also maintaining the familiarities of the C API. Meaning Lua Bindings offer the same stack manipulation capabilities:
 ```csharp
 // Push a number value 'x'
 L.PushNumber(2.0);
-L.SetGlobal("x");
+L.SetGlobal("x"); // Pops 2 from the stack
 
 // Push a second number value 'y'
 L.PushNumber(5.0);
-L.SetGlobal("y");
+L.SetGlobal("y"); // Pops 5 from the stack
 
 // Compute x * y in Lua and get the numeric value in C#
 double z = L.DoString<double>("return x * y"); // 10.0
