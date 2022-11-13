@@ -3,7 +3,7 @@
 #include "LuaTable.h"
 #include "LuaMarshal.h"
 #include "LuaException.hpp"
-#include "CLIMacros.h"
+#include "CLIMacros.hpp"
 #include <stdlib.h>
 
 using namespace System::Runtime::InteropServices;
@@ -29,24 +29,47 @@ Lua::LuaState::~LuaState() {
 }
 
 bool Lua::LuaState::LoadString(System::String^ lStr) {
-	return false;
+
+	// Grab C++ string
+	__UnmanagedString(strPtr, lStr, pLStr);
+
+	// Invoke
+	int result = luaL_loadstring(this->pState, pLStr);
+
+	// Free unmanaged string
+	__UnmangedFreeString(strPtr);
+
+	// Return if success
+	return result == LUA_OK;
+
 }
 
 bool Lua::LuaState::LoadFile(System::String^ filepath) {
-	return false;
+
+	// Grab C++ string
+	__UnmanagedString(strPtr, filepath, pLStr);
+
+	// Invoke
+	int result = luaL_loadfile(this->pState, pLStr);
+
+	// Free unmanaged string
+	__UnmangedFreeString(strPtr);
+
+	// Return if success
+	return result == LUA_OK;
+
 }
 
 bool Lua::LuaState::DoString(System::String^ lStr) {
 
 	// Grab C++ string
-	System::IntPtr strPtr = Marshal::StringToHGlobalAnsi(lStr);
-	const char* pLStr = static_cast<const char*>(strPtr.ToPointer());
+	__UnmanagedString(strPtr, lStr, pLStr);
 
 	// Invoke
 	int result = luaL_dostring(this->pState, pLStr);
 
 	// Free unmanaged string
-	Marshal::FreeHGlobal(strPtr);
+	__UnmangedFreeString(strPtr);
 
 	// Return if success
 	return result == LUA_OK;
@@ -56,22 +79,21 @@ bool Lua::LuaState::DoString(System::String^ lStr) {
 bool Lua::LuaState::DoFile(System::String^ filepath) {
 
 	// Grab C++ string
-	System::IntPtr strPtr = Marshal::StringToHGlobalAnsi(filepath);
-	const char* pLStr = static_cast<const char*>(strPtr.ToPointer());
+	__UnmanagedString(strPtr, filepath, pLStr);
 
 	// Invoke
 	int result = luaL_dofile(this->pState, pLStr);
 
 	// Free unmanaged string
-	Marshal::FreeHGlobal(strPtr);
+	__UnmangedFreeString(strPtr);
 
 	// Return if success
 	return result == LUA_OK;
 
 }
 
-Lua::LuaType Lua::LuaState::Type(int stackOffset) {
-	return static_cast<Lua::LuaType>(lua_type(this->pState, stackOffset));
+Lua::LuaType Lua::LuaState::Type(int index) {
+	return static_cast<Lua::LuaType>(lua_type(this->pState, index));
 }
 
 System::String^ Lua::LuaState::Typename(int index) {
@@ -84,32 +106,32 @@ System::String^ Lua::LuaState::Typename(int index) {
 
 }
 
-double Lua::LuaState::GetNumber(int stackOffset) {
-	return lua_tonumber(this->pState, stackOffset);
+double Lua::LuaState::GetNumber(int index) {
+	return lua_tonumber(this->pState, index);
 }
 
-bool Lua::LuaState::GetBoolean(int stackOffset) {
-	return lua_toboolean(this->pState, stackOffset);
+bool Lua::LuaState::GetBoolean(int index) {
+	return lua_toboolean(this->pState, index);
 }
 
-int64_t Lua::LuaState::GetInteger(int stackOffset) {
-	return lua_tointeger(this->pState, stackOffset);
+int64_t Lua::LuaState::GetInteger(int index) {
+	return lua_tointeger(this->pState, index);
 }
 
-System::String^ Lua::LuaState::GetString(int stackOffset) {
+System::String^ Lua::LuaState::GetString(int index) {
 
 	// Get C string
-	const char* pStr = lua_tostring(this->pState, stackOffset);
+	const char* pStr = lua_tostring(this->pState, index);
 
 	// Get 
 	return Marshal::PtrToStringAnsi(static_cast<System::IntPtr>(const_cast<char*>(pStr)));
 
 }
 
-System::Object^ Lua::LuaState::GetUserdata(int stackOffset) {
+System::Object^ Lua::LuaState::GetUserdata(int index) {
 
 	// Get userdata
-	uint64_t* userdataPtr = static_cast<uint64_t*>(lua_touserdata(this->pState, stackOffset));
+	uint64_t* userdataPtr = static_cast<uint64_t*>(lua_touserdata(this->pState, index));
 
 	// Get identifier
 	uint64_t identifier = *userdataPtr;
@@ -200,16 +222,19 @@ void Lua::LuaState::PushLightUserdata(System::Object^ obj) {
 
 }
 
-void Lua::LuaState::NewUserdata(System::Object^ obj) {
-
-	// Get the ID for userdata
-	uint64_t* userdataId = LuaMarshal::CreateUserdata(obj);
+System::Object^ Lua::LuaState::NewUserdata(System::Type^ userdataType) {
 
 	// Get the userdata as a pointer
 	uint64_t* lValue = static_cast<uint64_t*>(lua_newuserdata(this->pState, sizeof(uint64_t)));
 
+	// Create object
+	System::Object^ obj = System::Activator::CreateInstance(userdataType);
+
 	// Assign value
-	*lValue = *userdataId;
+	*lValue = *LuaMarshal::CreateUserdata(obj);
+
+	// Return
+	return obj;
 
 }
 
@@ -218,7 +243,8 @@ Lua::LuaTable Lua::LuaState::CreateTable(int arraySize, int dictionarySize) {
 }
 
 Lua::LuaTable Lua::LuaState::CreateTable(System::Collections::Hashtable^ table) {
-	throw gcnew System::NotImplementedException();
+	LuaMarshal::MarshalHashTableToStack(this->get_state(), table);
+	return LuaTable::from_top(this->get_state(), -1);
 }
 
 Lua::LuaTable Lua::LuaState::NewMetatable(System::String^ name, [System::Runtime::InteropServices::OutAttribute] bool% alreadyExists) {
@@ -278,8 +304,8 @@ void Lua::LuaState::Call(int argc, int retc) {
 	lua_call(this->pState, argc, retc);
 }
 
-int Lua::LuaState::PCall(int argc, int retc) {
-	return lua_pcall(this->pState, argc, retc, 0);
+Lua::ProtectedCallResult Lua::LuaState::PCall(int argc, int retc, int errfunc) {
+	return static_cast<ProtectedCallResult>(lua_pcall(this->pState, argc, retc, errfunc));
 }
 
 Lua::LuaState^ Lua::LuaState::NewState() {

@@ -108,7 +108,7 @@
     <ClInclude Include="lua\luabind.hpp">
       <Filter>Header Files\lua</Filter>
     </ClInclude>
-    <ClInclude Include="LuaLib.h">
+    <ClInclude Include="LuaLib.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LuaStateAux.h">
@@ -120,7 +120,7 @@
     <ClInclude Include="LuaTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CLIMacros.h">
+    <ClInclude Include="CLIMacros.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LuaMarshal.h">
@@ -132,7 +132,7 @@
     <ClInclude Include="LuaFunction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LuaUserdata.h">
+    <ClInclude Include="LuaUserdata.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,7 @@
 #include "LuaTable.h"
 #include "LuaState.h"
 #include "LuaMarshal.h"
-#include "CLIMacros.h"
+#include "CLIMacros.hpp"
 #include "LuaException.hpp"
 #include "lua/ltable.hpp"
 

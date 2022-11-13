@@ -19,16 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CLIMacros.h" />
+    <ClInclude Include="CLIMacros.hpp" />
     <ClInclude Include="LuaException.hpp" />
     <ClInclude Include="LuaFunction.hpp" />
-    <ClInclude Include="LuaLib.h" />
+    <ClInclude Include="LuaLib.hpp" />
     <ClInclude Include="LuaMarshal.h" />
     <ClInclude Include="LuaState.h" />
     <ClInclude Include="LuaStateAux.h" />
     <ClInclude Include="LuaTable.h" />
     <ClInclude Include="LuaType.h" />
-    <ClInclude Include="LuaUserdata.h" />
+    <ClInclude Include="LuaUserdata.hpp" />
     <ClInclude Include="lua\lapi.hpp" />
     <ClInclude Include="lua\lauxlib.hpp" />
     <ClInclude Include="lua\lcode.hpp" />

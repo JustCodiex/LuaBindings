@@ -4,11 +4,38 @@
 #include "LuaFunction.hpp"
 #include "LuaType.h"
 #include "LuaTable.h"
-#include "LuaLib.h"
+#include "LuaLib.hpp"
 
 #include <stdint.h>
 
 namespace Lua {
+
+	/// <summary>
+	/// Enum representing the possible outcomes of a protected call.
+	/// </summary>
+	enum class ProtectedCallResult {
+
+		/// <summary>
+		/// No errors occured.
+		/// </summary>
+		Ok = LUA_OK,
+
+		/// <summary>
+		/// A runtime error occured.
+		/// </summary>
+		Runtime = LUA_ERRRUN,
+
+		/// <summary>
+		/// An allocation error; the error handler was not invoked.
+		/// </summary>
+		Memory = LUA_ERRMEM,
+
+		/// <summary>
+		/// An error occured while running the error handler.
+		/// </summary>
+		ErrorHandler = LUA_ERRERR
+
+	};
 
 	/// <summary>
 	/// Class representing the Lua thread state. This class cannot be inheritted.
@@ -21,17 +48,17 @@ namespace Lua {
 	public:
 
 		/// <summary>
-		/// 
+		/// Load a string of Lua code.
 		/// </summary>
-		/// <param name="lStr"></param>
-		/// <returns></returns>
+		/// <param name="lStr">The lua code string to load.</param>
+		/// <returns>If string was successfully loaded, <see langword="true"/>; Otherwise <see langword="false"/></returns>
 		bool LoadString(System::String^ lStr);
 
 		/// <summary>
-		/// 
+		/// Load a file containing Lua code.
 		/// </summary>
-		/// <param name="filepath"></param>
-		/// <returns></returns>
+		/// <param name="filepath">The path to the file to load.</param>
+		/// <returns>If file was successfully loaded, <see langword="true"/>; Otherwise <see langword="false"/></returns>
 		bool LoadFile(System::String^ filepath);
 
 		/// <summary>
@@ -42,26 +69,26 @@ namespace Lua {
 		bool DoString(System::String^ lStr);
 		
 		/// <summary>
-		/// 
+		/// Load and run the file at the specified destination.
 		/// </summary>
-		/// <param name="filepath"></param>
-		/// <returns></returns>
+		/// <param name="filepath">The path to the file that is to be loaded and executed.</param>
+		/// <returns>If the file is successfully loaded and executed <see langword="true"/>; Otherwise <see langword="false"/>.</returns>
 		bool DoFile(System::String^ filepath);
 
 		/// <summary>
-		/// 
+		/// Get the <see cref="LuaType"/> of the top stack element.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>The <see cref="LuaType"/> of the top stack element.</returns>
 		LuaType Type() {
 			return this->Type(-1);
 		}
 
 		/// <summary>
-		/// 
+		/// Get the <see cref="LuaType"/> of the specified stack element.
 		/// </summary>
-		/// <param name="stackOffset"></param>
-		/// <returns></returns>
-		LuaType Type(int stackOffset);
+		/// <param name="index">The stack element to get type of. A value of -1 would return the type of the top stack element.</param>
+		/// <returns>The <see cref="LuaType"/> of the specified stack element.</returns>
+		LuaType Type(int index);
 
 		/// <summary>
 		/// Get the Lua typename of the top element.
@@ -79,64 +106,64 @@ namespace Lua {
 		System::String^ Typename(int index);
 
 		/// <summary>
-		/// 
+		/// Get the numeric value of the top stack value.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>The numeric value of the top stack value.</returns>
 		double GetNumber() {
 			return this->GetNumber(-1);
 		}
 
 		/// <summary>
-		/// 
+		/// Get the numeric value of the specified stack value.
 		/// </summary>
-		/// <param name="stackOffset"></param>
-		/// <returns></returns>
-		double GetNumber(int stackOffset);
+		/// <param name="index">The index of the stack value to get numeric value of.</param>
+		/// <returns>The numeric value of the specified stack value.</returns>
+		double GetNumber(int index);
 
 		/// <summary>
-		/// 
+		/// Get the boolean value of the top stack value.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>The boolean value of the top stack value.</returns>
 		bool GetBoolean() {
 			return this->GetBoolean(-1);
 		}
 
 		/// <summary>
-		/// 
+		/// Get the boolean value of the specified stack value.
 		/// </summary>
-		/// <param name="stackOffset"></param>
-		/// <returns></returns>
-		bool GetBoolean(int stackOffset);
+		/// <param name="index">The index of the stack value to get boolean value of.</param>
+		/// <returns>The boolean value of the specified stack value.</returns>
+		bool GetBoolean(int index);
 
 		/// <summary>
-		/// 
+		/// Get the integer value of the top stack value.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>The integer value of the top stack value.</returns>
 		int64_t GetInteger() {
 			return this->GetInteger(-1);
 		}
 
 		/// <summary>
-		/// 
+		/// Get the integer value of the specified stack value.
 		/// </summary>
-		/// <param name="stackOffset"></param>
-		/// <returns></returns>
-		int64_t GetInteger(int stackOffset);
+		/// <param name="index">The index of the stack value to get integer value of.</param>
+		/// <returns>The integer value of the specified stack value.</returns>
+		int64_t GetInteger(int index);
 
 		/// <summary>
-		/// 
+		/// Get the string value of the top stack value.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>The string value of the top stack value.</returns>
 		System::String^ GetString() {
 			return this->GetString(-1);
 		}
 
 		/// <summary>
-		/// 
+		/// Get the string value of the specified stack value.
 		/// </summary>
-		/// <param name="stackOffset"></param>
-		/// <returns></returns>
-		System::String^ GetString(int stackOffset);
+		/// <param name="index">The index of the stack value to get the string value of.</param>
+		/// <returns>The string value of the specifed stack value.</returns>
+		System::String^ GetString(int index);
 
 		/// <summary>
 		/// Get the top userdata stack value as its .NET representation.
@@ -149,9 +176,9 @@ namespace Lua {
 		/// <summary>
 		/// Get the specified userdata stack value as its .NET representation.
 		/// </summary>
-		/// <param name="stackOffset">The stack index to get userdata instance from.</param>
+		/// <param name="index">The stack index to get userdata instance from.</param>
 		/// <returns>The .NET instance represented by the Lua userdata.</returns>
-		System::Object^ GetUserdata(int stackOffset);
+		System::Object^ GetUserdata(int index);
 
 		/// <summary>
 		/// Get the top userdata stack value as its <typeparamref name="T"/> representation.
@@ -167,11 +194,11 @@ namespace Lua {
 		/// Get the specified userdata stack value as its <typeparamref name="T"/> representation.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="stackOffset">The stack index to get userdata instance from.</param>
+		/// <param name="index">The stack index to get userdata instance from.</param>
 		/// <returns>The Lua userdata-encapsulated <typeparamref name="T"/> instance</returns>
 		generic<class T>
-		T GetUserdata(int stackOffset) {
-			return safe_cast<T>(this->GetUserdata(stackOffset));
+		T GetUserdata(int index) {
+			return safe_cast<T>(this->GetUserdata(index));
 		}
 
 		/// <summary>
@@ -188,41 +215,41 @@ namespace Lua {
 		void SetGlobal(System::String^ name);
 
 		/// <summary>
-		/// 
+		/// Push an integer onto the stack.
 		/// </summary>
-		/// <param name="value"></param>
+		/// <param name="value">The integer value to push onto the stack.</param>
 		void PushInteger(int32_t value) {
 			this->PushInteger(static_cast<int64_t>(value));
 		}
 
 		/// <summary>
-		/// 
+		/// Push an integer onto the stack.
 		/// </summary>
-		/// <param name="value"></param>
+		/// <param name="value">The integer value to push onto the stack.</param>
 		void PushInteger(int64_t value);
 
 		/// <summary>
-		/// 
+		/// Push a number onto the stack.
 		/// </summary>
-		/// <param name="value"></param>
+		/// <param name="value">The number value to push onto the stack.</param>
 		void PushNumber(double value);
 
 		/// <summary>
-		/// 
+		/// Push a string onto the stack.
 		/// </summary>
-		/// <param name="value"></param>
+		/// <param name="value">The string value to push onto the stack.</param>
 		void PushString(System::String^ value);
 
 		/// <summary>
-		/// 
+		/// Push a boolean onto the stack.
 		/// </summary>
-		/// <param name="value"></param>
+		/// <param name="value">The boolean value to push onto the stack.</param>
 		void PushBoolean(bool value);
 
 		/// <summary>
-		/// 
+		/// Push a table onto the stack.
 		/// </summary>
-		/// <param name="table"></param>
+		/// <param name="table">The table to push onto the stack.</param>
 		void PushTable(System::Collections::Hashtable^ table);
 
 		/// <summary>
@@ -259,40 +286,45 @@ namespace Lua {
 		}
 
 		/// <summary>
-		/// 
+		/// Create a new instance of the specified type where the internal Lua pointer is managed by the Lua GC.
 		/// </summary>
-		/// <param name="obj"></param>
-		void NewUserdata(System::Object^ obj);
+		/// <param name="type">The type of the object to instantiate and create Lua value of.</param>
+		/// <returns>The newly created object.</returns>
+		System::Object^ NewUserdata(System::Type^ type);
 
 		/// <summary>
-		/// 
+		/// Create a new <typeparamref name="T"/> instance, where the internal Lua pointer is managed by the Lua GC.
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="value"></param>
+		/// <typeparam name="T">The type of object to create as user data</typeparam>
+		/// <returns>The newly created <typeparamref name="T"/> instance.</returns>
 		generic<class T> where T : ref class
-		void NewUserdata(T value) {
-			this->NewUserdata(safe_cast<System::Object^>(value));
+		T NewUserdata() {
+			return safe_cast<T>(this->NewUserdata(T::typeid));
 		}
 
 		/// <summary>
-		/// 
+		/// Create a new table with a pre-allocated array and pre-allocated dictionary sections
 		/// </summary>
-		/// <param name="arraySize"></param>
-		/// <param name="dictionarySize"></param>
-		/// <returns></returns>
+		/// <param name="arraySize">The size of the array section.</param>
+		/// <param name="dictionarySize">The size of the dictionary section.</param>
+		/// <returns>A <see cref="LuaTable"/> instance representing the table.</returns>
+		/// <exception cref="System::ArgumentOutOfRangeException"/>
 		LuaTable CreateTable(int arraySize, int dictionarySize);
 
 		/// <summary>
-		/// 
+		/// Create a new <see cref="LuaTable"/> from a .NET <see cref="System::Collections::Hashtable"/> instance.
 		/// </summary>
-		/// <param name="table"></param>
-		/// <returns></returns>
+		/// <param name="table">The <see cref="System::Collections::Hashtable"/> instance to push onto the Lua stack.</param>
+		/// <returns>A <see cref="LuaTable"/> instance representing the table.</returns>
 		LuaTable CreateTable(System::Collections::Hashtable^ table);
 
 		/// <summary>
-		/// 
+		/// Create a new table with no pre-allocated array or dictionary sections.
 		/// </summary>
-		/// <returns></returns>
+		/// <remarks>
+		/// Equivalent to calling: <c>L.CreateTable(0,0);</c>
+		/// </remarks>
+		/// <returns>A <see cref="LuaTable"/> instance representing the table.</returns>
 		LuaTable CreateTable() {
 			return this->CreateTable(0, 0);
 		}
@@ -306,9 +338,9 @@ namespace Lua {
 		LuaTable NewMetatable(System::String^ name, [System::Runtime::InteropServices::OutAttribute] bool% alreadyExists);
 
 		/// <summary>
-		/// 
+		/// Set the metable of the current stack top element to the specified metatable.
 		/// </summary>
-		/// <param name="name"></param>
+		/// <param name="name">The name of the metatable to set.</param>
 		void SetMetatable(System::String^ name);
 
 		/// <summary>
@@ -365,19 +397,20 @@ namespace Lua {
 		void Replace(int index);
 
 		/// <summary>
-		/// 
+		/// Call the Lua closure currently stored at the top of the stack, offset by the specified amount of arguments.
 		/// </summary>
-		/// <param name="argc"></param>
-		/// <param name="retc"></param>
+		/// <param name="argc">The amount of arguments to call the function with.</param>
+		/// <param name="retc">The amount of return values. Use <see cref="LuaState::MultiReturn"/> to get all return values.</param>
 		void Call(int argc, int retc);
 
 		/// <summary>
-		/// 
+		/// Perform a protected call using the Lua closure currently stored at the top of the stack, offset by the specified amount of arguments.
 		/// </summary>
-		/// <param name="argc"></param>
-		/// <param name="retc"></param>
-		/// <returns></returns>
-		int PCall(int argc, int retc);
+		/// <param name="argc">The amount of arguments to call the function with.</param>
+		/// <param name="retc">The amount of return values. Use <see cref="LuaState::MultiReturn"/> to get all return values.</param>
+		/// <param name="errfunc">If 0 the standard error message is pushed onto the stack; Otherwise the stack index of the error handler function.</param>
+		/// <returns>A <see cref="ProtectedCallResult"/> value describing the result of the protected call.</returns>
+		ProtectedCallResult PCall(int argc, int retc, int errfunc);
 
 	public:
 
@@ -405,6 +438,11 @@ namespace Lua {
 		/// <param name="libraries">The standard libraries to load.</param>
 		/// <returns>A new <see cref="LuaState"/> instance.</returns>
 		static LuaState^ NewState(LuaLib libraries);
+
+		/// <summary>
+		/// Option for multiple returns in calls to <see cref="LuaState::Call"/> and <see cref="LuaState::PCall"/>.
+		/// </summary>
+		literal int MultiReturn = LUA_MULTRET;
 
 	private:
 

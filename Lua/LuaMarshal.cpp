@@ -3,7 +3,7 @@
 #include "LuaState.h"
 #include "LuaFunction.hpp"
 #include "lua/luabind.hpp"
-#include "CLIMacros.h"
+#include "CLIMacros.hpp"
 
 using namespace System::Runtime::InteropServices;
 
@@ -18,8 +18,10 @@ System::Object^ Lua::LuaMarshal::MarshalStackValue(lua_State* L, LuaType t, int 
 			return nullptr;
 		case Lua::LuaType::Boolean:
 			return static_cast<bool>(lua_toboolean(L, idx));
-		case Lua::LuaType::LightUserData:
-			throw gcnew System::NotImplementedException();
+		case Lua::LuaType::LightUserData: {
+			uint64_t* uData = static_cast<uint64_t*>(lua_touserdata(L, idx));
+			return GetUserdata(*uData);
+		}
 		case Lua::LuaType::Number:
 			return static_cast<double>(lua_tonumber(L, idx));
 		case Lua::LuaType::String:
@@ -184,11 +186,32 @@ int csharp_invoke_luahandle(lua_State* L) {
 	// Grab delegate information
 	CSharpClosure* p = static_cast<CSharpClosure*>(lua_touserdata(L, lua_upvalueindex(1)));
 
-	// Create
-	int result = p->invoke(L);
+	try {
 
-	// Invoke and return
-	return result;
+		// Create
+		int result = p->invoke(L);
+
+		// Invoke and return
+		return result;
+
+	} catch (System::Exception^ ex) {
+
+		// Push error
+		__UnmanagedString(exPtr, ex->Message, pExStr);
+
+		// Push
+		lua_pushstring(L, pExStr);
+
+		// Free
+		__UnmangedFreeString(exPtr);
+
+		// Err
+		lua_error(L);
+
+		// Return naught
+		return 0;
+
+	}
 
 }
 
@@ -212,4 +235,109 @@ void Lua::LuaMarshal::CreateCSharpLuaFunction(lua_State* L, LuaFunctionDelegate^
 
 Lua::LuaType Lua::LuaMarshal::ToLuaType(lua_State* L, int idx) {
 	return static_cast<LuaType>(lua_type(L, idx));
+}
+
+using namespace System::Reflection::Emit;
+
+void LoadArgument(ILGenerator^ il, int i, LocalBuilder^ l) {
+	il->Emit(OpCodes::Ldarg_0); // Load LuaState^
+	il->Emit(OpCodes::Ldc_I4, -i); // Load lua stack index onto the stack
+	il->EmitCall(OpCodes::Call, Lua::LuaMarshal::__netStackMarshal, nullptr); // Call lua marshal
+	
+	// Unbox from Object type if value type
+	if (l->LocalType->IsValueType) {
+		il->Emit(OpCodes::Unbox_Any, l->LocalType);
+	} else {
+		il->Emit(OpCodes::Castclass, l->LocalType);
+	}
+	
+	il->Emit(OpCodes::Stloc, l); // Store in local
+
+}
+
+Lua::LuaFunctionDelegate^ Lua::LuaMarshal::CreateLuaDelegate(System::Reflection::MethodInfo^ method) {
+
+	// Grab static flag
+	auto isStatic = method->IsStatic;
+
+	// Get dynamic method ctor args
+	auto returnId = System::Int32::typeid;
+	auto params = gcnew array<System::Type^>(1) { LuaState::typeid };
+	auto dynamicName = System::String::Format("lua_{0}", method->Name->ToLowerInvariant());
+
+	// Grab argument count
+	auto methodParams = method->GetParameters();
+
+	// Create the dynamic method
+	auto dMethod = gcnew DynamicMethod(dynamicName, returnId, params);
+	auto body = dMethod->GetILGenerator();
+
+	// Prepare var for argument offset
+	int argCount = methodParams->Length + (isStatic ? 0 : 1);
+
+	// Prepare locals
+	auto locals = gcnew array<LocalBuilder^>(argCount);
+
+	// Demarshal stack values
+	for (int i = 0; i < argCount; i++) {
+		
+		// Hande local
+		int pi = isStatic ? i : (i - 1);
+		auto locTy = (i == 0 && !isStatic) ? method->DeclaringType : methodParams[pi]->ParameterType;
+		locals[i] = body->DeclareLocal(locTy);
+
+		// Load the argument
+		LoadArgument(body, argCount - i, locals[i]);
+
+	}
+
+	// Arg offset tracker
+	int locOffset = 0;
+
+	// Emit caller (null if static)
+	if (!isStatic) {
+		body->Emit(OpCodes::Ldloc, locals[0]);
+		locOffset++;
+	}
+
+	// Push args
+	for (int i = 0; i < methodParams->Length; i++) {
+		body->Emit(OpCodes::Ldloc, locals[locOffset + i]);
+	}
+
+	// Emit call to method
+	body->EmitCall(OpCodes::Callvirt, method, nullptr);
+
+	// If void, push 0
+	if (method->ReturnType == void::typeid) {
+		body->Emit(OpCodes::Ldc_I4_0);
+	} else { // TODO: Add support to tuple types
+
+		// Store it in a local
+		auto returnValLoc = body->DeclareLocal(System::Object::typeid);
+		if (method->ReturnType->IsValueType) {
+			body->Emit(OpCodes::Box, method->ReturnType);
+		}
+		body->Emit(OpCodes::Stloc, returnValLoc);
+
+		// Load L
+		body->Emit(OpCodes::Ldarg_0);
+
+		// Load result
+		body->Emit(OpCodes::Ldloc, returnValLoc);
+
+		// Call marshal
+		body->EmitCall(OpCodes::Call, __netToStackMarshal, nullptr);
+
+		// Push one onto the stack as return value
+		body->Emit(OpCodes::Ldc_I4_1);
+	
+	}
+
+	// Push return instruction
+	body->Emit(OpCodes::Ret);
+
+	// Return delegate
+	return safe_cast<LuaFunctionDelegate^>(dMethod->CreateDelegate(LuaFunctionDelegate::typeid));
+
 }

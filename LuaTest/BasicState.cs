@@ -148,4 +148,21 @@ public class BasicState {
 
     }
 
+    [Test]
+    public void CanLoadStringAndCallIt() {
+
+        // Create state
+        using var state = LuaState.NewState();
+
+        // Do load
+        state.LoadString("return 5 + 5");
+
+        // Call it
+        state.Call(0, LuaState.MultiReturn);
+
+        // Retrieve it
+        Assert.That(state.GetNumber(), Is.EqualTo(10.0));
+
+    }
+
 }
