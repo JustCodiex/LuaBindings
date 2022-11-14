@@ -42,6 +42,51 @@ static int userdata_indexself(lua_State*L) { // Simple "C" function to perform c
 
 	// Grab index
 	const char* pLookupStr = lua_tostring(L, 2);
+	char errbuffer[128];
+
+	// Ensure upvalue exists
+	if (!lua_istable(L, lua_upvalueindex(1))) {
+		sprintf_s(errbuffer, "failed to invoke %s since lua upvalue is %s", CPPCLI_NAMEOF(userdata_indexself), lua_typename(L, lua_upvalueindex(1)));
+		lua_pushstring(L, errbuffer);
+		lua_error(L);
+		return 0;
+	}
+
+	// Get value onto the stack
+	if (lua_getfield(L, lua_upvalueindex(1), pLookupStr) <= LUA_TNIL) {
+
+		// Pop nil
+		lua_pop(L, 1);
+
+		// Try get from field value
+		if (lua_getfield(L, lua_upvalueindex(2), pLookupStr) <= LUA_TNIL) {
+			if (!Lua::LuaUserdata::ErrorOnIndexNotFound) {
+				return 1;
+			}
+			lua_pop(L, 1);
+			sprintf_s(errbuffer, "attempt to index %s on a userdata value", pLookupStr);
+			lua_pushstring(L, errbuffer);
+			lua_error(L);
+			return 0;
+		}
+
+		// Push userdata
+		lua_pushvalue(L, 1);
+
+		// Call it
+		lua_call(L, 1, 1);
+
+	}
+
+	// Return 1 (the lookup value)
+	return 1;
+
+}
+
+static int userdata_newindexself(lua_State* L) {
+	
+	// Grab index
+	const char* pLookupStr = lua_tostring(L, 2);
 
 	// Ensure upvalue exists
 	if (!lua_istable(L, lua_upvalueindex(1))) {
@@ -53,10 +98,35 @@ static int userdata_indexself(lua_State*L) { // Simple "C" function to perform c
 	}
 
 	// Get value onto the stack
-	lua_getfield(L, lua_upvalueindex(1), pLookupStr);
+	lua_getfield(L, lua_upvalueindex(1), pLookupStr); // TODO: Do lua error here if nil is returned
 
-	// Return 1 (the lookup value)
-	return 1;
+	// Push the instance
+	lua_pushvalue(L, 1);
+
+	// Push the new value
+	lua_pushvalue(L, 3);
+
+	// Call it
+	lua_call(L, 2, 0);
+
+	// Return 0 (nothing is pushed)
+	return 0;
+
+}
+
+static void PushIndexFunction(lua_State* L, MethodInfo^ method, System::String^ name) {
+
+	// Push it
+	Lua::LuaMarshal::CreateCSharpLuaFunction(L, Lua::LuaMarshal::CreateLuaDelegate(method));
+
+	// Get C string
+	__UnmanagedString(f, name, pFnName);
+
+	// Name it
+	lua_setfield(L, -2, pFnName);
+
+	// Free
+	__UnmangedFreeString(f);
 
 }
 
@@ -95,31 +165,41 @@ void Lua::LuaUserdata::CreateTypeMetatable(lua_State* L, Type^ type, const char*
 
 	// Loop over functions and create lua delegates
 	for (int i = 0; i < functions->Count; i++) {
-		
-		// Grab function
-		auto fn = functions[i];
+		PushIndexFunction(L, functions[i].Item1, String::IsNullOrEmpty(functions[i].Item2->Name) ? functions[i].Item1->Name : functions[i].Item2->Name);
+	}
 
-		// Push it
-		LuaMarshal::CreateCSharpLuaFunction(L, LuaMarshal::CreateLuaDelegate(fn.Item1));
+	// Push a new table that will act as an upvalue
+	// Will contain field lookup data for the type
+	lua_newtable(L);
 
-		// Grab name
-		auto luaname = String::IsNullOrEmpty(functions[i].Item2->Name) ? fn.Item1->Name : fn.Item2->Name;
-
-		// Get C string
-		__UnmanagedString(f, luaname, pFnName);
-
-		// Name it
-		lua_setfield(L, -2, pFnName);
-
-		// Free
-		__UnmangedFreeString(f);
-
+	// Loop over fields and create lua delegates for the getters
+	for (int i = 0; i < fields->Count; i++) {
+		if (fields[i].Item1->GetMethod == nullptr || fields[i].Item2->Writonly)
+			continue;
+		PushIndexFunction(L, fields[i].Item1->GetMethod, String::IsNullOrEmpty(fields[i].Item2->Name) ? fields[i].Item1->Name : fields[i].Item2->Name);
 	}
 
 	// Push a C closure
-	lua_pushcclosure(L, userdata_indexself, 1);
+	lua_pushcclosure(L, userdata_indexself, 2);
 
 	// Save as __index
 	lua_setfield(L, -2, "__index");
+
+	// Push a new table that will act as an upvalue
+	// Will contain function lookup data for the type when assigning values
+	lua_newtable(L);
+
+	// Loop over setters
+	for (int i = 0; i < fields->Count; i++) {
+		if (fields[i].Item1->SetMethod == nullptr || fields[i].Item2->Readonly)
+			continue;
+		PushIndexFunction(L, fields[i].Item1->SetMethod, String::IsNullOrEmpty(fields[i].Item2->Name) ? fields[i].Item1->Name : fields[i].Item2->Name);
+	}
+
+	// Push a C closure
+	lua_pushcclosure(L, userdata_newindexself, 1);
+
+	// Save as __newindex
+	lua_setfield(L, -2, "__newindex");
 
 }

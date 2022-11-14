@@ -20,10 +20,19 @@ namespace Lua {
 	/// </summary>
 	[System::AttributeUsageAttribute(System::AttributeTargets::Property, AllowMultiple = false)]
 	public ref class LuaFieldAttribute : public System::Attribute {
+	public:
 		/// <summary>
 		/// Get or set the Lua name for the property. If <see langword="null"/> or empty, the property name is used.
 		/// </summary>
 		property System::String^ Name;
+		/// <summary>
+		/// Get or set if Lua can only read the value.
+		/// </summary>
+		property bool Readonly;
+		/// <summary>
+		/// Get or set if Lua can only write to the value.
+		/// </summary>
+		property bool Writonly;
 	};
 
 	/// <summary>
@@ -49,6 +58,13 @@ namespace Lua {
 		/// <returns>The instance that was created.</returns>
 		generic<class T> where T : ref class 
 		static T NewUserdata(LuaState^ state) { return safe_cast<T>(NewUserdata(state, T::typeid)); }
+
+	public:
+
+		/// <summary>
+		/// Get or set if the runtime should trigger an error when attempting to index a field not found on a C# userdata object.
+		/// </summary>
+		static property bool ErrorOnIndexNotFound;
 
 	private:
 

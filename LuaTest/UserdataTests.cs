@@ -84,7 +84,7 @@ public class UserdataTests {
     }
 
     [Test]
-    public void CanPushComplexUserdataWithAttributes() {
+    public void CanPushComplexUserdataAndInvokeMethod() {
 
         // Create new complex userdata
         ComplexUserdata cu = LuaUserdata.NewUserdata<ComplexUserdata>(state);
@@ -110,6 +110,83 @@ public class UserdataTests {
             Assert.That(state.Top, Is.EqualTo(1)); // Assert there is a top value
             Assert.That(cu.SomethingCalled, Is.True); // Assert was called
             Assert.That(state.GetNumber(), Is.EqualTo(6.0)); // Assert value of stack top
+        });
+
+    }
+
+    [Test]
+    public void CanPushComplexUserdataAndGetValue() {
+
+        // Create new complex userdata and name it
+        ComplexUserdata cu = LuaUserdata.NewUserdata<ComplexUserdata>(state);
+        cu.ValA = "hello";
+
+        state.SetGlobal("c");
+
+        // Update value
+        bool isUpdated = state.DoString("return c.ValA");
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(isUpdated, Is.True); // Assert true
+            Assert.That(state.GetString(), Is.EqualTo(cu.ValA)); // Assert was updated on our instance
+        });
+
+    }
+
+    [Test]
+    public void CanPushComplexUserdataAndSetValue() {
+
+        // Create new complex userdata and name it
+        ComplexUserdata cu = LuaUserdata.NewUserdata<ComplexUserdata>(state);
+        state.SetGlobal("c");
+
+        // Update value
+        bool isUpdated = state.DoString("c.ValA = \"Set by Lua\"");
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(isUpdated, Is.True); // Assert true
+            Assert.That(cu.ValA, Is.EqualTo("Set by Lua")); // Assert was updated on our instance
+        });
+
+    }
+
+    [Test]
+    public void CanNotAccessSomethingCalled() {
+
+        // Create new complex userdata and name it
+        ComplexUserdata cu = LuaUserdata.NewUserdata<ComplexUserdata>(state);
+        state.SetGlobal("c");
+
+        // Update value
+        bool isUpdated = state.DoString($"return c.{nameof(ComplexUserdata.SomethingCalled)}");
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(isUpdated, Is.True); // Assert true
+            Assert.That(state.Type(), Is.EqualTo(LuaType.Nil)); // Assert we get nil return value
+        });
+
+    }
+
+    [Test]
+    public void CanNotAccessSomethingCalledWithError() {
+
+        // Set error flag
+        LuaUserdata.ErrorOnIndexNotFound = true;
+
+        // Create new complex userdata and name it
+        ComplexUserdata cu = LuaUserdata.NewUserdata<ComplexUserdata>(state);
+        state.SetGlobal("c");
+
+        // Update value
+        bool isUpdated = state.DoString($"return c.{nameof(ComplexUserdata.SomethingCalled)}");
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(isUpdated, Is.False); // Assert true
+            Assert.That(state.GetString(), Is.EqualTo($"attempt to index {nameof(ComplexUserdata.SomethingCalled)} on a userdata value")); // Assert we get correct error string
         });
 
     }
