@@ -1,39 +1,8 @@
 #pragma once
 #include "LuaState.h"
+#include "LuaAttributes.hpp"
 
 namespace Lua {
-
-	/// <summary>
-	/// Attribute marking a method as visible in the Lua environment.
-	/// </summary>
-	[System::AttributeUsageAttribute(System::AttributeTargets::Method, AllowMultiple = false)]
-	public ref class LuaFunctionAttribute : public System::Attribute {
-	public:
-		/// <summary>
-		/// Get or set the Lua name for the method. If <see langword="null"/> or empty, the method name is used.
-		/// </summary>
-		property System::String^ Name;
-	};
-
-	/// <summary>
-	/// Attribute marking a property as visible in the Lua environment.
-	/// </summary>
-	[System::AttributeUsageAttribute(System::AttributeTargets::Property, AllowMultiple = false)]
-	public ref class LuaFieldAttribute : public System::Attribute {
-	public:
-		/// <summary>
-		/// Get or set the Lua name for the property. If <see langword="null"/> or empty, the property name is used.
-		/// </summary>
-		property System::String^ Name;
-		/// <summary>
-		/// Get or set if Lua can only read the value.
-		/// </summary>
-		property bool Readonly;
-		/// <summary>
-		/// Get or set if Lua can only write to the value.
-		/// </summary>
-		property bool Writonly;
-	};
 
 	/// <summary>
 	/// Static class providing helper methods for extended functionality of Userdata.
@@ -45,6 +14,10 @@ namespace Lua {
 		/// <summary>
 		/// Create a new Userdata instance in the Lua environment of the specified type.
 		/// </summary>
+		/// <remarks>
+		/// Ignores <see cref="Lua::LuaMetamethodAttribute"/> attributes where the method is <see cref="Lua::LuaMetamethod::Index"/> and 
+		/// <see cref="Lua::LuaMetamethod::NewIndex"/>
+		/// </remarks>
 		/// <param name="state">The state to create new userdata object in.</param>
 		/// <param name="type">The .NET userdata type to create.</param>
 		/// <returns>The instance that was created.</returns>
@@ -53,11 +26,32 @@ namespace Lua {
 		/// <summary>
 		/// Create a new <typeparamref name="T"/> Userdata instance in the Lua environment.
 		/// </summary>
+		/// <remarks>
+		/// Ignores <see cref="Lua::LuaMetamethodAttribute"/> attributes where the method is <see cref="Lua::LuaMetamethod::Index"/> and 
+		/// <see cref="Lua::LuaMetamethod::NewIndex"/>
+		/// </remarks>
 		/// <typeparam name="T">The specific userdata type.</typeparam>
 		/// <param name="state">The state to create new userdata object in.</param>
 		/// <returns>The instance that was created.</returns>
 		generic<class T> where T : ref class 
 		static T NewUserdata(LuaState^ state) { return safe_cast<T>(NewUserdata(state, T::typeid)); }
+
+		/// <summary>
+		/// Register the <typeparamref name="T"/> as a valid userdata type.
+		/// </summary>
+		/// <typeparam name="T">The type of userdata to create metadata for.</typeparam>
+		/// <param name="state">The state to register new userdata type in.</param>
+		generic <class T> where T : ref class
+		static void RegisterType(LuaState^ state);
+
+		/// <summary>
+		/// Gets if the specified type is a registered userdata type.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		static bool IsUserdataType(System::Type^ type) {
+			return  __userdatatypes->Contains(type);
+		}
 
 	public:
 
@@ -70,6 +64,11 @@ namespace Lua {
 
 		// Creates a Lua metatable for the specified type
 		static void CreateTypeMetatable(lua_State* L, System::Type^ type, const char* tName);
+
+	private:
+
+		initonly static System::Collections::Generic::HashSet<System::Type^>^ __userdatatypes
+			= gcnew System::Collections::Generic::HashSet<System::Type^>();
 
 	};
 

@@ -243,7 +243,7 @@ public class TableTest {
         Assert.That(exists, Is.False);
 
         // Push metatable member
-        meta.SetField(LuaTable.METATABLE_MUL, L => {
+        meta.SetField(LuaMetamethods.METATABLE_MUL, L => {
 
             // Grab ref to both
             var lhs = LuaTable.FromStack(L, -2);

@@ -1,6 +1,7 @@
 #include "LuaMarshal.h"
 #include "LuaTable.h"
 #include "LuaState.h"
+#include "LuaUserdata.hpp"
 #include "LuaFunction.hpp"
 #include "lua/luabind.hpp"
 #include "CLIMacros.hpp"
@@ -84,6 +85,28 @@ void Lua::LuaMarshal::MarshalToStack(lua_State* L, System::Object^ obj) {
 		MarshalHashTableToStack(L, safe_cast<System::Collections::Hashtable^>(obj));
 	} else if (ty->GetInterface("IList") != nullptr) {
 		MarshalListToStack(L, safe_cast<System::Collections::IList^>(obj));
+	} else if (LuaUserdata::IsUserdataType(ty)) {
+		
+		// Get the userdata as a pointer
+		uint64_t* lValue = static_cast<uint64_t*>(lua_newuserdata(L, sizeof(uint64_t)));
+
+		// Assign value
+		*lValue = *LuaMarshal::CreateUserdata(obj);
+
+		// Grab C/C++ string for typename
+		__UnmanagedString(tStrPtr, ty->FullName, pTypStr);
+
+		// Check if nil
+		if (luaL_getmetatable(L, pTypStr) == LUA_TNIL) {
+			throw gcnew LuaRuntimeException();
+		}
+
+		// Set the metatable
+		lua_setmetatable(L, -2);
+
+		// Free the unmanaged string
+		__UnmangedFreeString(tStrPtr);
+
 	} else {
 		throw gcnew System::NotSupportedException();
 	}

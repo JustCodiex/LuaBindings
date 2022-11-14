@@ -296,52 +296,6 @@ namespace Lua {
 			return FromStack(L, -1);
 		}
 
-	public:
-
-		/// <summary>
-		/// Represents the constant string for the metatable "__add" operation, overriding the <c>+</c> operator when used on value with a metatable defining a "__add" function.
-		/// </summary>
-		/// <remarks>
-		/// A metatable function for <b>__add</b> takes two arguments:
-		/// <c>
-		/// __add = function(left, right) ... end
-		/// </c>
-		/// </remarks>
-		literal System::String^ METATABLE_ADD = "__add";
-
-		/// <summary>
-		/// Represents the constant string for the metatable "__sub" operation, overriding the <c>-</c> operator when used on value with a metatable defining a "__sub" function.
-		/// </summary>
-		/// <remarks>
-		/// A metatable function for <b>__sub</b> takes two arguments:
-		/// <c>
-		/// __sub = function(left, right) ... end
-		/// </c>
-		/// </remarks>
-		literal System::String^ METATABLE_SUB = "__sub";
-
-		/// <summary>
-		/// Represents the constant string for the metatable "__mul" operation, overriding the <c>*</c> operator when used on value with a metatable defining a "__mul" function.
-		/// </summary>
-		/// <remarks>
-		/// A metatable function for <b>__mul</b> takes two arguments:
-		/// <c>
-		/// __mul = function(left, right) ... end
-		/// </c>
-		/// </remarks>
-		literal System::String^ METATABLE_MUL = "__mul";
-
-		/// <summary>
-		/// Represents the constant string for the metatable "__div" operation, overriding the <c>/</c> operator when used on value with a metatable defining a "__div" function.
-		/// </summary>
-		/// <remarks>
-		/// A metatable function for <b>__div</b> takes two arguments:
-		/// <c>
-		/// __div = function(left, right) ... end
-		/// </c>
-		/// </remarks>
-		literal System::String^ METATABLE_DIV = "__div";
-
 	private:
 
 		LuaTable(lua_State* state, int offset);

@@ -20,10 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CLIMacros.hpp" />
+    <ClInclude Include="LuaAttributes.hpp" />
     <ClInclude Include="LuaException.hpp" />
     <ClInclude Include="LuaFunction.hpp" />
     <ClInclude Include="LuaLib.hpp" />
     <ClInclude Include="LuaMarshal.h" />
+    <ClInclude Include="LuaMetamethods.hpp" />
     <ClInclude Include="LuaState.h" />
     <ClInclude Include="LuaStateAux.h" />
     <ClInclude Include="LuaTable.h" />

@@ -191,4 +191,35 @@ public class UserdataTests {
 
     }
 
+    public class Vector {
+        [LuaField(Name = "x")] public double X { get; set; }
+        [LuaField(Name = "y")] public double Y { get; set; }
+        [LuaField(Name = "z")] public double Z { get; set; }
+        [LuaMetamethod(LuaMetamethod.Addition)] public Vector Add(Vector other) => new Vector() { X = this.X + other.X, Y = this.Y + other.Y, Z = this.Z + other.Z };
+    }
+
+    [Test]
+    public void CanExecuteVectorScript() {
+
+        // Register userdata type
+        LuaUserdata.RegisterType<Vector>(state);
+
+        // Define vector3 function
+        state.PushCSharpFunction("vector3", L => {
+            var (x, y, z) = (L.GetNumber(1), L.GetNumber(2), L.GetNumber(3)); // Grab vals
+            var v = LuaUserdata.NewUserdata<Vector>(L); // Create
+            v.X = x;
+            v.Y = y;
+            v.Z = z;            
+            return 1; // Retur v (one value)
+        });
+
+        // Do vector file
+        var result = state.DoFile("Sample\\vec.lua");
+
+        // Assert success
+        Assert.That(result, Is.True);
+
+    }
+
 }

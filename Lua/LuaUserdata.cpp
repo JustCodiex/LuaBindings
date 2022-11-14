@@ -142,12 +142,17 @@ void Lua::LuaUserdata::CreateTypeMetatable(lua_State* L, Type^ type, const char*
 	// Create containers for functions and fields
 	auto functions = gcnew List<ValueTuple<MethodInfo^, LuaFunctionAttribute^>>();
 	auto fields = gcnew List<ValueTuple<PropertyInfo^, LuaFieldAttribute^>>();
+	auto ops = gcnew List<ValueTuple<MethodInfo^, LuaMetamethodAttribute^>>();
 
 	// Filter methods
 	for (int i = 0; i < methods->Count; i++) {
 		auto attrib = methods[i]->GetCustomAttributes(LuaFunctionAttribute::typeid, true);
 		if (attrib->Length == 1) {
 			functions->Add(ValueTuple<MethodInfo^, LuaFunctionAttribute^>(methods[i], safe_cast<LuaFunctionAttribute^>(attrib[0])));
+		}
+		attrib = methods[i]->GetCustomAttributes(LuaMetamethodAttribute::typeid, true);
+		if (attrib->Length == 1) {
+			ops->Add(ValueTuple<MethodInfo^, LuaMetamethodAttribute^>(methods[i], safe_cast<LuaMetamethodAttribute^>(attrib[0])));
 		}
 	}
 
@@ -201,5 +206,59 @@ void Lua::LuaUserdata::CreateTypeMetatable(lua_State* L, Type^ type, const char*
 
 	// Save as __newindex
 	lua_setfield(L, -2, "__newindex");
+
+	// Loop over and register other funcs
+	for (int i = 0; i < ops->Count; i++) {
+
+		// Skip index and newindex
+		if (ops[i].Item2->Method == LuaMetamethod::Index || ops[i].Item2->Method == LuaMetamethod::NewIndex)
+			continue;
+
+		// Get lua name
+		auto lName = LuaMetamethods::ToString(ops[i].Item2->Method);
+
+		// Grab the C friendly version
+		__UnmanagedString(np, lName, pTagStr);
+
+		// Push func
+		Lua::LuaMarshal::CreateCSharpLuaFunction(L, Lua::LuaMarshal::CreateLuaDelegate(ops[i].Item1));
+
+		// Set it
+		lua_setfield(L, -2, pTagStr);
+
+		// Free it
+		__UnmangedFreeString(np);
+
+	}
+
+	// Register it internally
+	__userdatatypes->Add(type);
+
+}
+
+generic<class T> where T : 
+ref class
+void Lua::LuaUserdata::RegisterType(LuaState^ state) {
+
+	// Get L
+	auto L = state->get_state();
+
+	// Get type
+	auto type = T::typeid;
+
+	// Grab C/C++ string for typename
+	__UnmanagedString(tStrPtr, type->FullName, pTypStr);
+
+	// Check if nil
+	if (luaL_getmetatable(L, pTypStr) == LUA_TNIL) {
+		lua_pop(L, 1); // pop nil
+		CreateTypeMetatable(L, type, pTypStr);
+	}
+
+	// Free the unmanaged string
+	__UnmangedFreeString(tStrPtr);
+
+	// Pop it from the stack
+	lua_pop(L, 1);
 
 }

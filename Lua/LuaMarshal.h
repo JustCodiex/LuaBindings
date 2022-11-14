@@ -120,7 +120,7 @@ namespace Lua {
 			return MarshalStackValue(L->get_state(), idx);
 		}
 
-		static void MarshalNestStateValue(LuaState^ L, System::Object^ obj) {
+		static void MarshalNetStateValue(LuaState^ L, System::Object^ obj) {
 			MarshalToStack(L->get_state(), obj);
 		}
 
@@ -129,7 +129,7 @@ namespace Lua {
 		static LuaMarshal() {
 			auto flags = System::Reflection::BindingFlags::NonPublic | System::Reflection::BindingFlags::Static;
 			__netStackMarshal = (LuaMarshal::typeid)->GetMethod(CPPCLI_NAMEOF(MarshalStackValueFromNetState), flags);
-			__netToStackMarshal = (LuaMarshal::typeid)->GetMethod(CPPCLI_NAMEOF(MarshalNestStateValue), flags);
+			__netToStackMarshal = (LuaMarshal::typeid)->GetMethod(CPPCLI_NAMEOF(MarshalNetStateValue), flags);
 			__userdataToIdentifier = gcnew System::Collections::Hashtable();
 			__identifierToUserdata = gcnew System::Collections::Hashtable();
 			__userdataIdentifierCounter = 0;

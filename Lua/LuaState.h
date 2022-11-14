@@ -38,6 +38,54 @@ namespace Lua {
 	};
 
 	/// <summary>
+	/// Represents the different options available to the garbage collection call.
+	/// </summary>
+	enum class GarbageCollectWhat : int {
+
+		/// <summary>
+		/// Stops the garbage collector. 
+		/// </summary>
+		Stop = LUA_GCSTOP,
+
+		/// <summary>
+		/// Restarts the garbage collector. 
+		/// </summary>
+		Restart = LUA_GCRESTART,
+
+		/// <summary>
+		/// Performs a full garbage-collection cycle. 
+		/// </summary>
+		Collect = LUA_GCCOLLECT,
+
+		/// <summary>
+		/// Returns the current amount of memory (in Kbytes) in use by Lua. 
+		/// </summary>
+		Count = LUA_GCCOUNT,
+
+		/// <summary>
+		/// Returns the remainder of dividing the current amount of bytes of memory in use by Lua by 1024. 
+		/// </summary>
+		CountBtytes = LUA_GCCOUNTB,
+
+		/// <summary>
+		/// Performs an incremental step of garbage collection. The step "size" is controlled by data (larger values mean more steps) in a non-specified way. 
+		/// If you want to control the step size you must experimentally tune the value of data. The function returns 1 if the step finished a garbage-collection cycle. 
+		/// </summary>
+		Step = LUA_GCSTEP,
+
+		/// <summary>
+		/// Sets data as the new value for the pause of the collector. The function returns the previous value of the pause. 
+		/// </summary>
+		SetPause = LUA_GCSETPAUSE,
+
+		/// <summary>
+		/// Sets data as the new value for the step multiplier of the collector. The function returns the previous value of the step multiplier
+		/// </summary>
+		SetStepMul = LUA_GCSETSTEPMUL
+
+	};
+
+	/// <summary>
 	/// Class representing the Lua thread state. This class cannot be inheritted.
 	/// </summary>
 	public ref class LuaState sealed {
@@ -412,6 +460,28 @@ namespace Lua {
 		/// <param name="errfunc">If 0 the standard error message is pushed onto the stack; Otherwise the stack index of the error handler function.</param>
 		/// <returns>A <see cref="ProtectedCallResult"/> value describing the result of the protected call.</returns>
 		ProtectedCallResult PCall(int argc, int retc, int errfunc);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="what"></param>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		int GC(GarbageCollectWhat what, int data);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="what"></param>
+		/// <returns></returns>
+		int GC(GarbageCollectWhat what) {
+			return this->GC(what, 0);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		void Error();
 
 	public:
 

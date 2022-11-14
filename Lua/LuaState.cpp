@@ -309,6 +309,14 @@ Lua::ProtectedCallResult Lua::LuaState::PCall(int argc, int retc, int errfunc) {
 	return static_cast<ProtectedCallResult>(lua_pcall(this->pState, argc, retc, errfunc));
 }
 
+int Lua::LuaState::GC(GarbageCollectWhat what, int data) {
+	return lua_gc(this->pState, static_cast<int>(what), data);
+}
+
+void Lua::LuaState::Error() {
+	lua_error(this->pState);
+}
+
 Lua::LuaState^ Lua::LuaState::NewState() {
 	return NewState(LuaLib::All);
 }
