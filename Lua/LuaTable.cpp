@@ -251,6 +251,72 @@ T Lua::LuaTable::GetField(System::String^ key, bool popValue) {
     return t;
 }
 
+System::Object^ Lua::LuaTable::Get(int index, bool pop) {
+
+    // Ensure table
+    __TABLEGUARD(this->iStackOffset);
+
+    // Get the index
+    lua_pushnumber(this->L, index);
+    lua_gettable(this->L, this->iStackOffset - 1);
+
+    // Grab val
+    System::Object^ fldVal = LuaMarshal::MarshalStackValue(this->L, -1);
+
+    // Pop top
+    if (pop) {
+        lua_pop(this->L, 1);
+    }
+
+    // Return
+    return fldVal;
+
+}
+
+generic<class T>
+T Lua::LuaTable::Get(int index, bool pop) {
+    System::Object^ v = this->Get(index, false);
+    T t = T();
+    try {
+        t = safe_cast<T>(v);
+    } catch (System::InvalidCastException^ icex) {
+        System::String^ err = System::String::Format("Lua index value type {0} cannot be cast to managed type {1}.", LuaMarshal::ToLuaType(this->L, -1), T::typeid->FullName);
+        throw gcnew LuaRuntimeException(err, icex);
+    }
+    if (pop) {
+        LuaState::pop_generic_safe(this->L, 1);
+    }
+    return t;
+}
+
+void Lua::LuaTable::Set(int index) {
+
+    // Ensure table
+    __TABLEGUARD(this->iStackOffset - 1);
+
+    // Push index
+    lua_pushnumber(this->L, index);
+
+    // Swap key/value so value is on top
+    lua_insert(this->L, -2);
+
+    // Set it
+    lua_settable(this->L, this->iStackOffset - 2);
+
+}
+
+void Lua::LuaTable::default::set(int index, System::Object^ value) {
+    __TABLEGUARD(this->iStackOffset);
+    LuaMarshal::MarshalToStack(this->L, value);
+    this->Set(index);
+}
+
+void Lua::LuaTable::default::set(System::String^ field, System::Object^ value) {
+    __TABLEGUARD(this->iStackOffset);
+    LuaMarshal::MarshalToStack(this->L, value);
+    this->SetField(field);
+}
+
 Lua::LuaTable Lua::LuaTable::New(LuaState^ L, int arraySize, int dictionarySize) {
     if (arraySize < 0)
         throw gcnew System::ArgumentOutOfRangeException("arraySize", System::String::Format("A value of {0} is not a valid array size. Value must be greater than or equal to 0.", arraySize));

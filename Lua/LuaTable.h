@@ -118,6 +118,12 @@ namespace Lua {
 		void SetField(System::String^ key);
 
 		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="index"></param>
+		void Set(int index);
+
+		/// <summary>
 		/// Get the value of specified table field and pop it immediately from the stack.
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
@@ -155,6 +161,42 @@ namespace Lua {
 		/// <returns>The field value or <see langword="null"/> if nil value or not found.</returns>
 		System::Object^ GetField(System::String^ key, bool pop);
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="index"></param>
+		/// <returns></returns>
+		System::Object^ Get(int index) {
+			return this->Get(index, true);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="index"></param>
+		/// <param name="pop"></param>
+		/// <returns></returns>
+		System::Object^ Get(int index, bool pop);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="index"></param>
+		/// <param name="pop"></param>
+		/// <returns></returns>
+		generic<class T>
+		T Get(int index, bool pop);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="index"></param>
+		/// <returns></returns>
+		generic<class T>
+		T Get(int index) { return this->Get<T>(index, true); }
+
 		// Inherited via IEnumerable
 		virtual System::Collections::IEnumerator^ GetEnumerator();
 
@@ -169,6 +211,27 @@ namespace Lua {
 		/// </summary>
 		property int Count {
 			int get() { return this->iLen; }
+		}
+
+		/// <summary>
+		/// Get or set the value at the specified table index.
+		/// </summary>
+		/// <remarks>
+		/// Lua-tables are 1-indexed and the first table index is, therefore, 1.
+		/// </remarks>
+		/// <exception cref="LuaTypeExpectedException"/>
+		property System::Object^ default[int]{
+			System::Object^ get(int index) { return this->Get(index); }
+			void set(int index, System::Object^ value);
+		}
+
+		/// <summary>
+		/// Get or set the value of the specified table field.
+		/// </summary>
+		/// <exception cref="LuaTypeExpectedException"/>
+		property System::Object^ default[System::String^]{
+			System::Object^ get(System::String^ field) { return this->GetField(field); }
+			void set(System::String^ field, System::Object^ value);
 		}
 
 	public:

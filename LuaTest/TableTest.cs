@@ -315,4 +315,70 @@ public class TableTest {
 
     }
 
+    [Test]
+    public void CanGetByIndex() {
+
+        // Define array
+        string[] strs = new string[4] { "a", "b", "c", "d" };
+
+        // Push it
+        LuaTable t = state.CreateTable(strs);
+
+        // Assert it
+        Assert.Multiple(() => {
+
+            // Assert the count matches the amount of elements we pushed
+            Assert.That(t.Count, Is.EqualTo(4));
+
+            // Assert values match
+            for (int i = 0; i < strs.Length; i++)
+                Assert.That(t.Get(i + 1), Is.EqualTo(strs[i]));
+
+        });
+
+    }
+
+    [Test]
+    public void CanGetByIndexer() {
+
+        // Define array
+        string[] strs = new string[4] { "a", "b", "c", "d" };
+
+        // Push it
+        LuaTable t = state.CreateTable(strs);
+
+        // Assert it
+        Assert.Multiple(() => {
+
+            // Assert values match
+            for (int i = 0; i < strs.Length; i++)
+                Assert.That(t[i + 1], Is.EqualTo(strs[i]));
+
+        });
+
+    }
+
+    [Test]
+    public void CanSetByIndexer() {
+
+        // Create table and populate it
+        LuaTable t = state.CreateTable(4, 0);
+        t[1] = "a";
+        t[2] = "b";
+        t[3] = "c";
+        t[4] = "d";
+
+        // Convert to hashtable
+        var table = t.ToHashtable();
+
+        // Assert
+        Assert.Multiple(() => {
+            Assert.That(table[1.0], Is.EqualTo("a"));
+            Assert.That(table[2.0], Is.EqualTo("b"));
+            Assert.That(table[3.0], Is.EqualTo("c"));
+            Assert.That(table[4.0], Is.EqualTo("d"));
+        });
+
+    }
+
 }
