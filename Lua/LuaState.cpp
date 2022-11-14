@@ -204,10 +204,6 @@ void Lua::LuaState::PushString(System::String^ value) {
 
 }
 
-void Lua::LuaState::PushTable(System::Collections::Hashtable^ table) {
-	LuaMarshal::MarshalHashTableToStack(this->pState, table);
-}
-
 void Lua::LuaState::PushCSharpFunction(LuaFunctionDelegate^ func) {
 	LuaMarshal::CreateCSharpLuaFunction(this->pState, func);
 }
@@ -243,8 +239,13 @@ Lua::LuaTable Lua::LuaState::CreateTable(int arraySize, int dictionarySize) {
 }
 
 Lua::LuaTable Lua::LuaState::CreateTable(System::Collections::Hashtable^ table) {
-	LuaMarshal::MarshalHashTableToStack(this->get_state(), table);
-	return LuaTable::from_top(this->get_state(), -1);
+	LuaMarshal::MarshalHashTableToStack(this->pState, table);
+	return LuaTable::from_top(this->pState, -1);
+}
+
+Lua::LuaTable Lua::LuaState::CreateTable(System::Collections::IList^ list) {
+	LuaMarshal::MarshalListToStack(this->pState, list);
+	return LuaTable::from_top(this->pState, -1);
 }
 
 Lua::LuaTable Lua::LuaState::NewMetatable(System::String^ name, [System::Runtime::InteropServices::OutAttribute] bool% alreadyExists) {

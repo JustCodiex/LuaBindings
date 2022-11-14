@@ -70,7 +70,7 @@ void Lua::LuaMarshal::MarshalToStack(lua_State* L, System::Object^ obj) {
 
 		// Push it
 		lua_pushstring(L, pStr);
-
+		
 		// Free it
 		__UnmangedFreeString(tmp);
 
@@ -82,6 +82,8 @@ void Lua::LuaMarshal::MarshalToStack(lua_State* L, System::Object^ obj) {
 		lua_pushinteger(L, static_cast<lua_Integer>(safe_cast<int>(obj)));
 	} else if (ty == System::Collections::Hashtable::typeid) {
 		MarshalHashTableToStack(L, safe_cast<System::Collections::Hashtable^>(obj));
+	} else if (ty->GetInterface("IList") != nullptr) {
+		MarshalListToStack(L, safe_cast<System::Collections::IList^>(obj));
 	} else {
 		throw gcnew System::NotSupportedException();
 	}
@@ -110,6 +112,30 @@ void Lua::LuaMarshal::MarshalHashTableToStack(lua_State* L, System::Collections:
 		MarshalToStack(L, current.Value);
 
 		// Set
+		lua_settable(L, -3);
+
+	}
+
+}
+
+void Lua::LuaMarshal::MarshalListToStack(lua_State* L, System::Collections::IList^ list) {
+
+	// Grab count
+	int count = list->Count;
+
+	// Push table
+	lua_createtable(L, count, 0);
+
+	// Loop over and set
+	for (int i = 0; i < count; i++) {
+
+		// Push N
+		lua_pushnumber(L, i + 1);
+
+		// Push value
+		MarshalToStack(L, list[i]);
+
+		// Set the table by index
 		lua_settable(L, -3);
 
 	}

@@ -90,6 +90,13 @@ namespace Lua {
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="L"></param>
+		/// <param name="list"></param>
+		static void MarshalListToStack(lua_State* L, System::Collections::IList^ list);
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <remarks>
 		/// This will return an existing pointer if the object is already registered.
 		/// </remarks>

@@ -247,12 +247,6 @@ namespace Lua {
 		void PushBoolean(bool value);
 
 		/// <summary>
-		/// Push a table onto the stack.
-		/// </summary>
-		/// <param name="table">The table to push onto the stack.</param>
-		void PushTable(System::Collections::Hashtable^ table);
-
-		/// <summary>
 		/// Push a C# method onto the top of the stack.
 		/// </summary>
 		/// <param name="func">The C# function to push onto the stack.</param>
@@ -315,8 +309,15 @@ namespace Lua {
 		/// Create a new <see cref="LuaTable"/> from a .NET <see cref="System::Collections::Hashtable"/> instance.
 		/// </summary>
 		/// <param name="table">The <see cref="System::Collections::Hashtable"/> instance to push onto the Lua stack.</param>
-		/// <returns>A <see cref="LuaTable"/> instance representing the table.</returns>
+		/// <returns>A <see cref="LuaTable"/> instance representing the pushed <see cref="System::Collections::Hashtable"/>.</returns>
 		LuaTable CreateTable(System::Collections::Hashtable^ table);
+
+		/// <summary>
+		/// Create a new <see cref="LuaTable"/> from a .NET <see cref="System::Collections::IList"/> instance.
+		/// </summary>
+		/// <param name="list">The <see cref="System::Collections::IList"/> instance to push onto the Lua stack.</param>
+		/// <returns>A <see cref="LuaTable"/> instance representing the pushed <see cref="System::Collections::IList"/>.</returns>
+		LuaTable CreateTable(System::Collections::IList^ list);
 
 		/// <summary>
 		/// Create a new table with no pre-allocated array or dictionary sections.

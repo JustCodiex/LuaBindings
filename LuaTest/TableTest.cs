@@ -125,7 +125,7 @@ public class TableTest {
         };
 
         // Push it
-        state.PushTable(table);
+        state.CreateTable(table);
         state.SetGlobal("g_test");
 
         // Assert values
@@ -159,7 +159,7 @@ public class TableTest {
         };
 
         // Push it
-        state.PushTable(table);
+        state.CreateTable(table);
         state.SetGlobal("g_test");
 
         // Assert values
@@ -213,7 +213,7 @@ public class TableTest {
     public void CanGetSecondTopStack() {
 
         // Push table
-        state.PushTable(new Hashtable() {
+        state.CreateTable(new Hashtable() {
             { "A", 1.0 },
             { "B", 2.0 }
         });
@@ -271,7 +271,7 @@ public class TableTest {
         Assert.That(state.Top, Is.EqualTo(0));
 
         // Create table a
-        state.PushTable(new() { { "x", 1.0 }, { "y", 2.0 }, { "z", 3.0 } });
+        state.CreateTable(new Hashtable() { { "x", 1.0 }, { "y", 2.0 }, { "z", 3.0 } });
         state.SetMetatable("MetaTest");
         state.SetGlobal("a");
 
@@ -279,7 +279,7 @@ public class TableTest {
         Assert.That(state.Top, Is.EqualTo(0));
 
         // Create table b
-        state.PushTable(new() { { "x", 1.0 }, { "y", 2.0 }, { "z", 3.0 } });
+        state.CreateTable(new Hashtable() { { "x", 1.0 }, { "y", 2.0 }, { "z", 3.0 } });
         state.SetMetatable("MetaTest");
         state.SetGlobal("b");
 
@@ -291,6 +291,27 @@ public class TableTest {
 
         // Assert result
         Assert.That(result, Is.EqualTo(14));
+
+    }
+
+    [Test]
+    public void CanPushArray() {
+
+        // Create string array
+        string[] strs = new string[4] { "a", "b", "c", "d" };
+        bool[] check = new bool[4];
+
+        // Push it
+        LuaTable t = state.CreateTable(strs);
+
+        // Iterate it
+        foreach (LuaTable.KeyValue kv in t) {
+            int i = (int)(double)kv.Key;
+            check[i - 1] = strs[i - 1].Equals(kv.Value);
+        }
+
+        // Verify all good
+        Assert.That(check.All(x => x), Is.True);
 
     }
 
