@@ -39,7 +39,7 @@ public class FunctionTests {
         Assert.Multiple(() => {
 
             // Invoke it
-            Assert.That(state.DoString("test()"), Is.True);
+            Assert.That(state.DoString("test()"), Is.EqualTo(CallResult.Ok));
 
             // Verify
             Assert.That(wasInvoked, Is.True);
@@ -100,7 +100,7 @@ public class FunctionTests {
     public void CanInvokeAddFunction() {
 
         // Do a file with a function
-        Assert.That(state.DoFile("Sample\\funky.lua"), Is.True);
+        Assert.That(state.DoFile("Sample\\funky.lua"), Is.EqualTo(CallResult.Ok));
 
         // Get global
         LuaFunction add = state.GetGlobal<LuaFunction>("add");
@@ -117,7 +117,7 @@ public class FunctionTests {
     public void CanInvokeSumFunction() {
 
         // Do a file with a function
-        Assert.That(state.DoFile("Sample\\funky.lua"), Is.True);
+        Assert.That(state.DoFile("Sample\\funky.lua"), Is.EqualTo(CallResult.Ok));
 
         // Get global
         LuaFunction sum = state.GetGlobal<LuaFunction>("sum");
@@ -134,7 +134,7 @@ public class FunctionTests {
     public void CanInvokeFunctionWithTupleReturn() {
 
         // Do a file with a function
-        Assert.That(state.DoFile("Sample\\gcd.lua"), Is.True);
+        Assert.That(state.DoFile("Sample\\gcd.lua"), Is.EqualTo(CallResult.Ok));
 
         // Get global
         LuaFunction gcd = state.GetGlobal<LuaFunction>("gcd");
@@ -156,7 +156,7 @@ public class FunctionTests {
     public void CanInvokeCallbacksInCSharpFunction() {
 
         // Import the math functions
-        Assert.That(state.DoFile("Sample\\funky.lua"), Is.True);
+        Assert.That(state.DoFile("Sample\\funky.lua"), Is.EqualTo(CallResult.Ok));
 
         // Define caller
         state.PushCSharpFunction("caller", L => {

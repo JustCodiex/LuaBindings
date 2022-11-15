@@ -5,6 +5,7 @@
 #include "LuaException.hpp"
 #include "CLIMacros.hpp"
 #include <stdlib.h>
+#include <vector>
 
 using namespace System::Runtime::InteropServices;
 
@@ -28,7 +29,7 @@ Lua::LuaState::~LuaState() {
 
 }
 
-bool Lua::LuaState::LoadString(System::String^ lStr) {
+Lua::CallResult Lua::LuaState::LoadString(System::String^ lStr) {
 
 	// Grab C++ string
 	__UnmanagedString(strPtr, lStr, pLStr);
@@ -40,11 +41,11 @@ bool Lua::LuaState::LoadString(System::String^ lStr) {
 	__UnmangedFreeString(strPtr);
 
 	// Return if success
-	return result == LUA_OK;
+	return static_cast<CallResult>(result);
 
 }
 
-bool Lua::LuaState::LoadFile(System::String^ filepath) {
+Lua::CallResult Lua::LuaState::LoadFile(System::String^ filepath) {
 
 	// Grab C++ string
 	__UnmanagedString(strPtr, filepath, pLStr);
@@ -56,11 +57,84 @@ bool Lua::LuaState::LoadFile(System::String^ filepath) {
 	__UnmangedFreeString(strPtr);
 
 	// Return if success
-	return result == LUA_OK;
+	return static_cast<CallResult>(result);
 
 }
 
-bool Lua::LuaState::DoString(System::String^ lStr) {
+Lua::CallResult Lua::LuaState::LoadStream(System::IO::Stream^ stream, System::String^ chunkname) {
+
+	// Grab C++ chunk name string
+	__UnmanagedString(strPtr, chunkname, pLStr);
+
+	// Create reader
+	auto reader = gcnew System::IO::BinaryReader(stream);
+
+	// Handle bytes
+	array<unsigned  char>^ data = reader->ReadBytes(static_cast<int>(stream->Length));
+
+	// Grab pinned ptr
+	pin_ptr<unsigned char> pinnedPtr = &data[0];
+	const char* pData = reinterpret_cast<const char*>(pinnedPtr);
+
+	// Invoke load
+	int result = luaL_loadbuffer(this->pState, pData, static_cast<int>(stream->Length), pLStr);
+
+	// Free unmanaged string
+	__UnmangedFreeString(strPtr);
+
+	// Return if success
+	return static_cast<CallResult>(result);
+
+}
+
+#pragma managed(push, off)
+struct csharp_dumpbuffer {
+	unsigned char* data;
+	size_t size;
+};
+#pragma managed(pop)
+
+const char* csharp_luadumpreader(lua_State* L, void* data, size_t* sz) {
+
+	// Get buffer
+	csharp_dumpbuffer* buf = static_cast<csharp_dumpbuffer*>(data);
+
+	// Make space for data
+	char* result = new char[buf->size];
+
+	// Copy from buffer
+	memcpy_s(result, buf->size, buf->data, buf->size);
+	
+	// Return result
+	return result;
+
+}
+
+Lua::CallResult Lua::LuaState::Load(array<unsigned char>^ buffer, System::String^ chunkname) {
+
+	// Grab C++ chunk name string
+	__UnmanagedString(strPtr, chunkname, pLStr);
+
+	// Get pinned
+	pin_ptr<unsigned char> pinnedPtr = &buffer[0];
+
+	// Grab a pointer
+	csharp_dumpbuffer buf{};
+	buf.data = static_cast<unsigned char*>(pinnedPtr);
+	buf.size = buffer->Length;
+
+	// Invoke load
+	int result = lua_load(this->pState, csharp_luadumpreader, static_cast<void*>(&buf), pLStr, 0);
+
+	// Free unmanaged string
+	__UnmangedFreeString(strPtr);
+
+	// Return if success
+	return static_cast<CallResult>(result);
+
+}
+
+Lua::CallResult Lua::LuaState::DoString(System::String^ lStr) {
 
 	// Grab C++ string
 	__UnmanagedString(strPtr, lStr, pLStr);
@@ -72,11 +146,11 @@ bool Lua::LuaState::DoString(System::String^ lStr) {
 	__UnmangedFreeString(strPtr);
 
 	// Return if success
-	return result == LUA_OK;
+	return static_cast<CallResult>(result);
 
 }
 
-bool Lua::LuaState::DoFile(System::String^ filepath) {
+Lua::CallResult Lua::LuaState::DoFile(System::String^ filepath) {
 
 	// Grab C++ string
 	__UnmanagedString(strPtr, filepath, pLStr);
@@ -88,7 +162,7 @@ bool Lua::LuaState::DoFile(System::String^ filepath) {
 	__UnmangedFreeString(strPtr);
 
 	// Return if success
-	return result == LUA_OK;
+	return static_cast<CallResult>(result);
 
 }
 
@@ -305,8 +379,8 @@ void Lua::LuaState::Call(int argc, int retc) {
 	lua_call(this->pState, argc, retc);
 }
 
-Lua::ProtectedCallResult Lua::LuaState::PCall(int argc, int retc, int errfunc) {
-	return static_cast<ProtectedCallResult>(lua_pcall(this->pState, argc, retc, errfunc));
+Lua::CallResult Lua::LuaState::PCall(int argc, int retc, int errfunc) {
+	return static_cast<CallResult>(lua_pcall(this->pState, argc, retc, errfunc));
 }
 
 int Lua::LuaState::GC(GarbageCollectWhat what, int data) {
@@ -317,8 +391,79 @@ void Lua::LuaState::Error() {
 	lua_error(this->pState);
 }
 
+int Lua::LuaState::Yield(int results) {
+	return lua_yield(this->pState, results);
+}
+
+void Lua::LuaState::Concat(int n) {
+	lua_concat(this->pState, n);
+}
+
 Lua::LuaState^ Lua::LuaState::NewState() {
 	return NewState(LuaLib::All);
+}
+
+int csharp_luadumpwriter(lua_State* L, const void* P, size_t sz, void* up) {
+
+	// Grab uffer
+	csharp_dumpbuffer* buf = static_cast<csharp_dumpbuffer*>(up);
+
+	// Reintrepret data
+	const unsigned char* data = reinterpret_cast<const unsigned char*>(static_cast<const char*>(P));
+	
+	// Grab new content
+	unsigned char* content = new unsigned char[buf->size + sz];
+	
+	// Fill existing content
+	if (buf->data) {
+		memcpy_s(content, buf->size + sz, buf->data, buf->size);
+		delete buf->data;
+	}
+
+	// Add our own
+	memcpy_s(content + buf->size, sz, data, sz);
+
+	// Update
+	buf->data = content;
+	buf->size += sz;
+
+	// Return 0 (OK)
+	return LUA_OK;
+
+}
+
+Lua::CallResult Lua::LuaState::Dump([System::Runtime::InteropServices::OutAttribute] array<unsigned char>^% buffer) {
+	
+	// Verify not C/C# function
+	if (lua_iscfunction(this->pState, -1))
+		throw gcnew LuaRuntimeException("Cannot dump a C or C# function.");
+
+	// Verify is function
+	if (!lua_isfunction(this->pState, -1))
+		throw gcnew LuaTypeExpectedException(static_cast<LuaType>(lua_type(this->pState, -1)), LuaType::Function);
+
+	csharp_dumpbuffer dmpBuf{};
+	int result = lua_dump(this->pState, csharp_luadumpwriter, &dmpBuf, 0);
+	if (result != LUA_OK)
+		return static_cast<CallResult>(result);
+
+	// Create buffer
+	buffer = gcnew array<unsigned char>(static_cast<int>(dmpBuf.size));
+
+	// Copy contents
+	System::Runtime::InteropServices::Marshal::Copy(System::IntPtr(dmpBuf.data), buffer, 0, static_cast<int>(dmpBuf.size));
+
+	// Free
+	delete dmpBuf.data;
+
+	// Return OK
+	return CallResult::Ok;
+
+}
+
+int csharp_luapanic(lua_State* L) {
+	throw gcnew Lua::LuaRuntimeException(Lua::LuaMarshal::MarshalStackValue(L, -1)->ToString());
+	return 0;
 }
 
 Lua::LuaState^ Lua::LuaState::NewState(LuaLib libraries) {
@@ -328,6 +473,9 @@ Lua::LuaState^ Lua::LuaState::NewState(LuaLib libraries) {
 	if (!pState) {
 		throw gcnew System::Exception("Failed to create new lua state");
 	}
+
+	// Set panic
+	lua_atpanic(pState, csharp_luapanic);
 
 	// Check libs
 	if (libraries != LuaLib::None) {

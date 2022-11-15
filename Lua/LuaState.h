@@ -11,9 +11,9 @@
 namespace Lua {
 
 	/// <summary>
-	/// Enum representing the possible outcomes of a protected call.
+	/// Enum representing the possible outcomes of a Lua API call.
 	/// </summary>
-	enum class ProtectedCallResult {
+	public enum class CallResult : int {
 
 		/// <summary>
 		/// No errors occured.
@@ -21,26 +21,36 @@ namespace Lua {
 		Ok = LUA_OK,
 
 		/// <summary>
+		/// A yield was returned.
+		/// </summary>
+		Yield = LUA_YIELD,
+
+		/// <summary>
 		/// A runtime error occured.
 		/// </summary>
-		Runtime = LUA_ERRRUN,
+		RuntimeError = LUA_ERRRUN,
+
+		/// <summary>
+		/// A syntax error occured.
+		/// </summary>
+		SyntaxError = LUA_ERRSYNTAX,
 
 		/// <summary>
 		/// An allocation error; the error handler was not invoked.
 		/// </summary>
-		Memory = LUA_ERRMEM,
+		MemoryError = LUA_ERRMEM,
 
 		/// <summary>
 		/// An error occured while running the error handler.
 		/// </summary>
-		ErrorHandler = LUA_ERRERR
+		ErrorHandler = LUA_ERRERR,
 
 	};
 
 	/// <summary>
 	/// Represents the different options available to the garbage collection call.
 	/// </summary>
-	enum class GarbageCollectWhat : int {
+	public enum class GarbageCollectWhat : int {
 
 		/// <summary>
 		/// Stops the garbage collector. 
@@ -99,29 +109,77 @@ namespace Lua {
 		/// Load a string of Lua code.
 		/// </summary>
 		/// <param name="lStr">The lua code string to load.</param>
-		/// <returns>If string was successfully loaded, <see langword="true"/>; Otherwise <see langword="false"/></returns>
-		bool LoadString(System::String^ lStr);
+		/// <returns>If string was successfully loaded, <see cref="CallResult::Ok"/>; Otherwise <see cref="CallResult"/> error description</returns>
+		CallResult LoadString(System::String^ lStr);
 
 		/// <summary>
 		/// Load a file containing Lua code.
 		/// </summary>
 		/// <param name="filepath">The path to the file to load.</param>
-		/// <returns>If file was successfully loaded, <see langword="true"/>; Otherwise <see langword="false"/></returns>
-		bool LoadFile(System::String^ filepath);
+		/// <returns>If file was successfully loaded, <see cref="CallResult::Ok"/>; Otherwise <see cref="CallResult"/> error description</returns>
+		CallResult LoadFile(System::String^ filepath);
+
+		/// <summary>
+		/// Loads a stream containing Lua code.
+		/// </summary>
+		/// <param name="stream">The stream to load Lua code from.</param>
+		/// <returns>If stream was successfully loaded, <see cref="CallResult::Ok"/>; Otherwise <see cref="CallResult"/> error description</returns>
+		CallResult LoadStream(System::IO::Stream^ stream){
+			return this->LoadStream(stream, "stream chunk");
+		}
+
+		/// <summary>
+		/// Loads a stream containing Lua code.
+		/// </summary>
+		/// <param name="stream">The stream to load Lua code from.</param>
+		/// <param name="chunkname">The name of the chunk.</param>
+		/// <returns>If stream was successfully loaded, <see cref="CallResult::Ok"/>; Otherwise <see cref="CallResult"/> error description</returns>
+		CallResult LoadStream(System::IO::Stream^ stream, System::String^ chunkname);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="buffer"></param>
+		/// <param name="chunkname"></param>
+		/// <returns></returns>
+		CallResult Load(array<unsigned char>^ buffer, System::String^ chunkname);
 
 		/// <summary>
 		/// Load and run a string of Lua code.
 		/// </summary>
 		/// <param name="lStr">The lua code string to execute.</param>
-		/// <returns>if string was successfully loaded and exectured <see langword="true"/> is returned; Otherwise <see langword="false"/></returns>
-		bool DoString(System::String^ lStr);
+		/// <returns>if string was successfully loaded and exectured <see cref="CallResult::Ok"/>; Otherwise <see cref="CallResult"/> error description</returns>
+		CallResult DoString(System::String^ lStr);
 		
 		/// <summary>
 		/// Load and run the file at the specified destination.
 		/// </summary>
 		/// <param name="filepath">The path to the file that is to be loaded and executed.</param>
-		/// <returns>If the file is successfully loaded and executed <see langword="true"/>; Otherwise <see langword="false"/>.</returns>
-		bool DoFile(System::String^ filepath);
+		/// <returns>If the file is successfully loaded and executed <see cref="CallResult::Ok"/>; Otherwise <see cref="CallResult"/> error description.</returns>
+		CallResult DoFile(System::String^ filepath);
+
+		/// <summary>
+		/// Load and the the stream.
+		/// </summary>
+		/// <param name="stream">The stream to load and run</param>
+		/// <returns>If the stream is successfully loaded and executed <see cref="CallResult::Ok"/>; Otherwise <see cref="CallResult"/> error description.</returns>
+		CallResult DoStream(System::IO::Stream^ stream) {
+			return this->DoStream(stream, "stream_chunk");
+		}
+
+		/// <summary>
+		/// Load and the the stream.
+		/// </summary>
+		/// <param name="stream">The stream to load and run</param>
+		/// <param name="chunkname">The name of the chunk.</param>
+		/// <returns>If the stream is successfully loaded and executed <see cref="CallResult::Ok"/>; Otherwise <see cref="CallResult"/> error description.</returns>
+		CallResult DoStream(System::IO::Stream^ stream, System::String^ chunkname) {
+			auto r = this->LoadStream(stream, chunkname);
+			if (r != CallResult::Ok)
+				return r;
+			this->PCall(0, MultiReturn, 0);
+			return CallResult::Ok;
+		}
 
 		/// <summary>
 		/// Get the <see cref="LuaType"/> of the top stack element.
@@ -450,6 +508,7 @@ namespace Lua {
 		/// </summary>
 		/// <param name="argc">The amount of arguments to call the function with.</param>
 		/// <param name="retc">The amount of return values. Use <see cref="LuaState::MultiReturn"/> to get all return values.</param>
+		/// <exception cref="LuaRuntimeException"/>
 		void Call(int argc, int retc);
 
 		/// <summary>
@@ -458,30 +517,64 @@ namespace Lua {
 		/// <param name="argc">The amount of arguments to call the function with.</param>
 		/// <param name="retc">The amount of return values. Use <see cref="LuaState::MultiReturn"/> to get all return values.</param>
 		/// <param name="errfunc">If 0 the standard error message is pushed onto the stack; Otherwise the stack index of the error handler function.</param>
-		/// <returns>A <see cref="ProtectedCallResult"/> value describing the result of the protected call.</returns>
-		ProtectedCallResult PCall(int argc, int retc, int errfunc);
+		/// <returns>A <see cref="CallResult"/> value describing the result of the protected call.</returns>
+		CallResult PCall(int argc, int retc, int errfunc);
 
 		/// <summary>
-		/// 
+		/// Controls the garbage collector. Performs several tasks, according to the value of <paramref name="what"/>.
 		/// </summary>
-		/// <param name="what"></param>
-		/// <param name="data"></param>
-		/// <returns></returns>
+		/// <param name="what">The parameter that specifies the GC action to perform.</param>
+		/// <param name="data">Optional inteeger argument.</param>
+		/// <returns>An error code if any; Otherwise 0</returns>
 		int GC(GarbageCollectWhat what, int data);
 
 		/// <summary>
-		/// 
+		/// Controls the garbage collector. Performs several tasks, according to the value of <paramref name="what"/>.
 		/// </summary>
-		/// <param name="what"></param>
-		/// <returns></returns>
+		/// <param name="what">The parameter that specifies the GC action to perform.</param>
+		/// <returns>An error code if any; Otherwise 0</returns>
 		int GC(GarbageCollectWhat what) {
 			return this->GC(what, 0);
 		}
 
 		/// <summary>
-		/// 
+		/// Generates an error for the Lua runtime, taking the top stack value as the error message.
 		/// </summary>
+		/// <exception cref="LuaRuntimeException"/>
 		void Error();
+
+		/// <summary>
+		/// Yields a coroutine. 
+		/// </summary>
+		/// <remarks>
+		/// This function should only be called as the return expression of a C# function:
+		/// <code>
+		/// return L.Yield(n);
+		/// </code>
+		/// </remarks>
+		/// <param name="results">The amount of stack elements to return.</param>
+		/// <returns>The amount of return elements.</returns>
+		int Yield(int results);
+
+		/// <summary>
+		/// Concatenates the <paramref name="n"/> values at the top of the stack, pops them, and leaves the result at the top. 
+		/// If <paramref name="n"/> is 1, the result is the single value on the stack (that is, the function does nothing); 
+		/// if <paramref name="n"/> is 0, the result is the empty string. 
+		/// </summary>
+		/// <param name="n">The amount of stack elements to concatenate.</param>
+		void Concat(int n);
+
+		/// <summary>
+		/// Dumps a function as a binary chunk, that, if loaded again, results in a function equivalent to the one dumped.
+		/// </summary>
+		/// <remarks>
+		/// The function is not popped from the stack.
+		/// </remarks>
+		/// <param name="buffer">The binary output containing the Lua opcode instructions for the specified function.</param>
+		/// <returns>A <see cref="CallResult"/> describing the result of the call.</returns>
+		/// <exception cref="LuaRuntimeException"/>
+		/// <exception cref="LuaTypeExpectedException"/>
+		CallResult Dump([System::Runtime::InteropServices::OutAttribute] array<unsigned char>^% buffer);
 
 	public:
 

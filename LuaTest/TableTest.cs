@@ -40,7 +40,7 @@ public class TableTest {
     public void CanGetArrayFromTop() {
 
         // Do string
-        Assert.That(state.DoString("return { 1, 2, 3, 4 }"), Is.True);
+        Assert.That(state.DoString("return { 1, 2, 3, 4 }"), Is.EqualTo(CallResult.Ok));
 
         Assert.Multiple(() => {
             
@@ -64,7 +64,7 @@ public class TableTest {
     public void CanIterateOverTop() {
 
         // Do string
-        Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.True);
+        Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.EqualTo(CallResult.Ok));
 
         // Capture it
         LuaTable table = LuaTable.FromTop(state);
@@ -96,7 +96,7 @@ public class TableTest {
     public void CanSetField() {
 
         // Do string
-        Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.True);
+        Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.EqualTo(CallResult.Ok));
 
         // Capture it
         LuaTable table = LuaTable.FromTop(state);
@@ -176,7 +176,7 @@ public class TableTest {
     public void CanGetTable() {
 
         // Do string
-        Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.True);
+        Assert.That(state.DoString("return { first = \"Hello\", second = \"World\" }"), Is.EqualTo(CallResult.Ok));
 
         // Capture it
         Hashtable table = LuaTable.FromTop(state).ToHashtable();

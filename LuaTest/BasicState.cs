@@ -31,10 +31,10 @@ public class BasicState {
         using var state = LuaState.NewState(LuaLib.Base);
 
         // Do simple string
-        bool result = state.DoString("print \"Hello World\"");
+        var result = state.DoString("print \"Hello World\"");
 
         // Assert success
-        Assert.That(result, Is.True);
+        Assert.That(result, Is.EqualTo(CallResult.Ok));
 
     }
 
@@ -45,10 +45,10 @@ public class BasicState {
         using var state = LuaState.NewState(LuaLib.Base);
 
         // Do hello file
-        bool result = state.DoFile("Sample\\hello.lua");
+        var result = state.DoFile("Sample\\hello.lua");
 
         // Assert success
-        Assert.That(result, Is.True);
+        Assert.That(result, Is.EqualTo(CallResult.Ok));
 
     }
 
@@ -74,7 +74,7 @@ public class BasicState {
         Assert.Multiple(() => {
 
             // Do simple string
-            Assert.That(state.DoString("v = 5.0"), Is.True);
+            Assert.That(state.DoString("v = 5.0"), Is.EqualTo(CallResult.Ok));
 
             // Put 'v' on stack
             Assert.That(state.GetGlobal("v"), Is.EqualTo(LuaType.Number));
@@ -97,7 +97,7 @@ public class BasicState {
         Assert.Multiple(() => {
 
             // Do simple string
-            Assert.That(state.DoString("s = \"Hello\""), Is.True);
+            Assert.That(state.DoString("s = \"Hello\""), Is.EqualTo(CallResult.Ok));
 
             // Put 'v' on stack
             Assert.That(state.GetGlobal("s"), Is.EqualTo(LuaType.String));
@@ -122,7 +122,7 @@ public class BasicState {
         Assert.Multiple(() => {
 
             // Assert set
-            Assert.That(state.DoString("s = \"Hello World\""), Is.True);
+            Assert.That(state.DoString("s = \"Hello World\""), Is.EqualTo(CallResult.Ok));
 
             // Assert get
             Assert.That(state.GetGlobal<string>("s"), Is.EqualTo("Hello World"));
@@ -162,6 +162,114 @@ public class BasicState {
 
         // Retrieve it
         Assert.That(state.GetNumber(), Is.EqualTo(10.0));
+
+    }
+
+    [Test]
+    public void CanLoadFromStream() {
+
+        // Create state
+        using var state = LuaState.NewState();
+
+        // Load
+        using var fs = File.Open("Sample\\hello.lua", FileMode.Open);
+
+        // Load
+        var loaded = state.LoadStream(fs);
+
+        // Assert success
+        Assert.That(loaded, Is.EqualTo(CallResult.Ok));
+
+    }
+
+    [Test]
+    public void CanLoadNamedFromStream() {
+
+        // Create state
+        using var state = LuaState.NewState();
+
+        // Load
+        using var fs = File.Open("Sample\\error.lua", FileMode.Open);
+
+        // Load
+        var loaded = state.LoadStream(fs, "test");
+
+        // Assert success
+        Assert.That(loaded, Is.EqualTo(CallResult.Ok));
+
+        // Call it
+        var ex = Assert.Throws<LuaRuntimeException>(() => state.Call(0, LuaState.MultiReturn));
+
+        // Assert error contents
+        Assert.That(ex.Message, Is.EqualTo("[string \"test\"]:1: this is an error"));
+
+    }
+
+    [Test]
+    public void CanTransferFunction() {
+
+        // Create states
+        using var state1 = LuaState.NewState();
+        using var state2 = LuaState.NewState();
+
+        // Make state1 do file
+        Assert.That(state1.DoFile("Sample\\funky.lua"), Is.EqualTo(CallResult.Ok));
+
+        // Get func
+        state1.GetGlobal("add");
+
+        // Dump it
+        var dumpstate = state1.Dump(out byte[] luacode);
+        Assert.Multiple(() => {
+            Assert.That(dumpstate, Is.EqualTo(CallResult.Ok));
+            Assert.That(luacode, Is.Not.Null);
+            Assert.That(luacode, Is.Not.Empty);
+        });
+        
+        // Now push it into state 2
+        var loaded = state2.LoadStream(new MemoryStream(luacode), "add");
+        Assert.That(loaded, Is.EqualTo(CallResult.Ok));
+
+        // Give it a name
+        state2.SetGlobal("add");
+
+        // Invoke add in state 2
+        double v = state2.DoString<double>("return add(1,2)");
+        Assert.That(v, Is.EqualTo(3));
+
+    }
+
+    [Test]
+    public void CanTransferFunctionUsingLoad() {
+
+        // Create states
+        using var state1 = LuaState.NewState();
+        using var state2 = LuaState.NewState();
+
+        // Make state1 do file
+        Assert.That(state1.DoFile("Sample\\funky.lua"), Is.EqualTo(CallResult.Ok));
+
+        // Get func
+        state1.GetGlobal("mul");
+
+        // Dump it
+        var dumpstate = state1.Dump(out byte[] luacode);
+        Assert.Multiple(() => {
+            Assert.That(dumpstate, Is.EqualTo(CallResult.Ok));
+            Assert.That(luacode, Is.Not.Null);
+            Assert.That(luacode, Is.Not.Empty);
+        });
+
+        // Now push it into state 2
+        var loaded = state2.Load(luacode, "mul");
+        Assert.That(loaded, Is.EqualTo(CallResult.Ok));
+
+        // Give it a name
+        state2.SetGlobal("mul");
+
+        // Invoke mul in state 2
+        double v = state2.DoString<double>("return mul(2,2)");
+        Assert.That(v, Is.EqualTo(4));
 
     }
 

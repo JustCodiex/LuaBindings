@@ -49,7 +49,7 @@ public class UserdataTests {
         });
 
         // Call it
-        Assert.That(state.DoString("Test(data)"), Is.True);
+        Assert.That(state.DoString("Test(data)"), Is.EqualTo(CallResult.Ok));
 
     }
 
@@ -79,7 +79,7 @@ public class UserdataTests {
         state.SetGlobal("c");
 
         // Assert we get an exception
-        Assert.That(state.DoString("return c:SomeFunc(5.0);"), Is.False);
+        Assert.That(state.DoString("return c:SomeFunc(5.0);"), Is.EqualTo(CallResult.Yield));
 
     }
 
@@ -102,11 +102,11 @@ public class UserdataTests {
         state.SetGlobal("c");
 
         // Invoke do string
-        bool v = state.DoString("return c:SomeFunc(5.0);");
+        var v = state.DoString("return c:SomeFunc(5.0);");
 
         // Make assertions
         Assert.Multiple(() => {
-            Assert.That(v, Is.True); // Assert we dont get an exception
+            Assert.That(v, Is.EqualTo(CallResult.Ok)); // Assert we dont get an exception
             Assert.That(state.Top, Is.EqualTo(1)); // Assert there is a top value
             Assert.That(cu.SomethingCalled, Is.True); // Assert was called
             Assert.That(state.GetNumber(), Is.EqualTo(6.0)); // Assert value of stack top
@@ -124,11 +124,11 @@ public class UserdataTests {
         state.SetGlobal("c");
 
         // Update value
-        bool isUpdated = state.DoString("return c.ValA");
+        var isUpdated = state.DoString("return c.ValA");
 
         // Assert
         Assert.Multiple(() => {
-            Assert.That(isUpdated, Is.True); // Assert true
+            Assert.That(isUpdated, Is.EqualTo(CallResult.Ok)); // Assert true
             Assert.That(state.GetString(), Is.EqualTo(cu.ValA)); // Assert was updated on our instance
         });
 
@@ -142,11 +142,11 @@ public class UserdataTests {
         state.SetGlobal("c");
 
         // Update value
-        bool isUpdated = state.DoString("c.ValA = \"Set by Lua\"");
+        var isUpdated = state.DoString("c.ValA = \"Set by Lua\"");
 
         // Assert
         Assert.Multiple(() => {
-            Assert.That(isUpdated, Is.True); // Assert true
+            Assert.That(isUpdated, Is.EqualTo(CallResult.Ok)); // Assert true
             Assert.That(cu.ValA, Is.EqualTo("Set by Lua")); // Assert was updated on our instance
         });
 
@@ -160,11 +160,11 @@ public class UserdataTests {
         state.SetGlobal("c");
 
         // Update value
-        bool isUpdated = state.DoString($"return c.{nameof(ComplexUserdata.SomethingCalled)}");
+        var isUpdated = state.DoString($"return c.{nameof(ComplexUserdata.SomethingCalled)}");
 
         // Assert
         Assert.Multiple(() => {
-            Assert.That(isUpdated, Is.True); // Assert true
+            Assert.That(isUpdated, Is.EqualTo(CallResult.Ok)); // Assert true
             Assert.That(state.Type(), Is.EqualTo(LuaType.Nil)); // Assert we get nil return value
         });
 
@@ -181,11 +181,11 @@ public class UserdataTests {
         state.SetGlobal("c");
 
         // Update value
-        bool isUpdated = state.DoString($"return c.{nameof(ComplexUserdata.SomethingCalled)}");
+        var isUpdated = state.DoString($"return c.{nameof(ComplexUserdata.SomethingCalled)}");
 
         // Assert
         Assert.Multiple(() => {
-            Assert.That(isUpdated, Is.False); // Assert true
+            Assert.That(isUpdated, Is.Not.EqualTo(CallResult.Ok)); // Assert true
             Assert.That(state.GetString(), Is.EqualTo($"attempt to index {nameof(ComplexUserdata.SomethingCalled)} on a userdata value")); // Assert we get correct error string
         });
 
@@ -218,7 +218,7 @@ public class UserdataTests {
         var result = state.DoFile("Sample\\vec.lua");
 
         // Assert success
-        Assert.That(result, Is.True);
+        Assert.That(result, Is.EqualTo(CallResult.Ok));
 
     }
 

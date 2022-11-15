@@ -24,7 +24,7 @@ namespace Lua {
 		/// <returns>The resulting .NET type.</returns>
 		/// <exception cref="LuaRuntimeException"/>
 		static T DoString(LuaState^ state, System::String^ lStr) {
-			if (!state->DoString(lStr)) {
+			if (state->DoString(lStr) != CallResult::Ok) {
 				const char* pErrStr = lua_tostring(state->get_state(), -1);
 				System::String^ str = System::Runtime::InteropServices::Marshal::PtrToStringAnsi(static_cast<System::IntPtr>(const_cast<char*>(pErrStr)));
 				throw gcnew LuaRuntimeException(str);
