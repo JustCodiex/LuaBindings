@@ -1,6 +1,7 @@
 #pragma once
 #include "LuaFunction.hpp"
 #include "LuaException.hpp"
+#include "LuaMetamethods.hpp"
 
 struct lua_State;
 
@@ -81,6 +82,7 @@ namespace Lua {
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		/// <param name="value">The string value to set.</param>
+		/// <exception cref="LuaTypeExpectedException"/>
 		void SetField(System::String^ key, System::String^ value);
 
 		/// <summary>
@@ -88,6 +90,7 @@ namespace Lua {
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		/// <param name="value">The boolean value to set.</param>
+		/// <exception cref="LuaTypeExpectedException"/>
 		void SetField(System::String^ key, bool value);
 
 		/// <summary>
@@ -95,6 +98,7 @@ namespace Lua {
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		/// <param name="value">The integer value to set.</param>
+		/// <exception cref="LuaTypeExpectedException"/>
 		void SetField(System::String^ key, int value);
 
 		/// <summary>
@@ -102,6 +106,7 @@ namespace Lua {
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		/// <param name="value">The number value to set.</param>
+		/// <exception cref="LuaTypeExpectedException"/>
 		void SetField(System::String^ key, double value);
 
 		/// <summary>
@@ -109,19 +114,32 @@ namespace Lua {
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		/// <param name="function">Function delegate to set.</param>
+		/// <exception cref="LuaTypeExpectedException"/>
 		void SetField(System::String^ key, LuaFunctionDelegate^ function);
 
 		/// <summary>
 		/// Set the value of specified table field using the current top value as field value.
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
+		/// <exception cref="LuaTypeExpectedException"/>
 		void SetField(System::String^ key);
 
 		/// <summary>
-		/// 
+		/// Set the specified table index to refer to the current top stack value.
 		/// </summary>
-		/// <param name="index"></param>
+		/// <param name="index">The table index to set.</param>
+		/// <exception cref="LuaTypeExpectedException"/>
 		void Set(int index);
+
+		/// <summary>
+		/// Set a metatable function.
+		/// </summary>
+		/// <param name="meta">The metamethod to set.</param>
+		/// <param name="function">The C# function to invoke when the metamethod is triggered.</param>
+		/// <exception cref="LuaTypeExpectedException"/>
+		void SetMetatableFunction(LuaMetamethod meta, LuaFunctionDelegate^ function) {
+			this->SetField(LuaMetamethods::ToString(meta), function);
+		}
 
 		/// <summary>
 		/// Get the value of specified table field and pop it immediately from the stack.
@@ -129,6 +147,7 @@ namespace Lua {
 		/// <param name="key">The string identifier for the field.</param>
 		/// <returns>The field value or <see langword="default"/> if nil value or not found.</returns>
 		/// <exception cref="LuaRuntimeException"/>
+		/// <exception cref="LuaTypeExpectedException"/>
 		generic<class T>
 		T GetField(System::String^ key) {
 			return this->GetField<T>(key, true);
@@ -141,6 +160,7 @@ namespace Lua {
 		/// <param name="pop">Flag marking if the value should be popped from the stack.</param>
 		/// <returns>The field value or <see langword="default"/> if nil value or not found.</returns>
 		/// <exception cref="LuaRuntimeException"/>
+		/// <exception cref="LuaTypeExpectedException"/>
 		generic<class T>
 		T GetField(System::String^ key, bool pop);
 
@@ -149,6 +169,7 @@ namespace Lua {
 		/// </summary>
 		/// <param name="key">The string identifier for the field.</param>
 		/// <returns>The field value or <see langword="null"/> if nil value or not found.</returns>
+		/// <exception cref="LuaTypeExpectedException"/>
 		System::Object^ GetField(System::String^ key) {
 			return this->GetField(key, true);
 		}
@@ -159,41 +180,48 @@ namespace Lua {
 		/// <param name="key">The string identifier for the field.</param>
 		/// <param name="pop">Flag marking if the value should be popped from the stack.</param>
 		/// <returns>The field value or <see langword="null"/> if nil value or not found.</returns>
+		/// <exception cref="LuaTypeExpectedException"/>
 		System::Object^ GetField(System::String^ key, bool pop);
 
 		/// <summary>
-		/// 
+		/// Get the value at the specified table index and pop it from the stack.
 		/// </summary>
-		/// <param name="index"></param>
-		/// <returns></returns>
+		/// <param name="index">The table index to get value from.</param>
+		/// <returns>A .NET instance representing the stored value or <see langword="null"/> if index is out of bounds.</returns>
+		/// <exception cref="LuaTypeExpectedException"/>
 		System::Object^ Get(int index) {
 			return this->Get(index, true);
 		}
 
 		/// <summary>
-		/// 
+		/// Get the value at the specified table index and leave the value on the stack if <paramref name="pop"/> is <see langword="false"/>.
 		/// </summary>
-		/// <param name="index"></param>
-		/// <param name="pop"></param>
-		/// <returns></returns>
+		/// <param name="index">The table index to get value from.</param>
+		/// <param name="pop">Flag to set if the value should be popped from the stack.</param>
+		/// <returns>A .NET instance representing the stored value or <see langword="null"/> if index is out of bounds.</returns>
+		/// <exception cref="LuaTypeExpectedException"/>
 		System::Object^ Get(int index, bool pop);
 
 		/// <summary>
-		/// 
+		/// Get the <typeparamref name="T"/> value at the specified index and leave the value on the stack if <paramref name="pop"/> is <see langword="false"/>.
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="index"></param>
-		/// <param name="pop"></param>
-		/// <returns></returns>
+		/// <typeparam name="T">The .NET type to return.</typeparam>
+		/// <param name="index">The table index to get value from.</param>
+		/// <param name="pop">Flag to set if the value should be popped from the stack.</param>
+		/// <returns>A <typeparamref name="T"/> instance representing the stored value or <see langword="default"/> if index is out of bounds.</returns>
+		/// <exception cref="LuaRuntimeException"/>
+		/// <exception cref="LuaTypeExpectedException"/>
 		generic<class T>
 		T Get(int index, bool pop);
 
 		/// <summary>
-		/// 
+		/// Get the <typeparamref name="T"/> value at the specified table index and pop it from the stack.
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="index"></param>
-		/// <returns></returns>
+		/// <typeparam name="T">The .NET type to return.</typeparam>
+		/// <param name="index">The table index to get value from.</param>
+		/// <returns>A <typeparamref name="T"/> instance representing the stored value or <see langword="default"/> if index is out of bounds.</returns>
+		/// <exception cref="LuaRuntimeException"/>
+		/// <exception cref="LuaTypeExpectedException"/>
 		generic<class T>
 		T Get(int index) { return this->Get<T>(index, true); }
 

@@ -47,8 +47,8 @@ namespace Lua {
 		/// <summary>
 		/// Gets if the specified type is a registered userdata type.
 		/// </summary>
-		/// <param name="type"></param>
-		/// <returns></returns>
+		/// <param name="type">The .NET type to check.</param>
+		/// <returns>When the specified type is registered, <see langword="true"/>; Otherwise <see langword="false"/>.</returns>
 		static bool IsUserdataType(System::Type^ type) {
 			return  __userdatatypes->Contains(type);
 		}

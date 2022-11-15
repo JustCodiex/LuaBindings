@@ -101,4 +101,27 @@ namespace Lua {
 		}
 	};
 
+	/// <summary>
+	/// Represents errors that occur while working with metatables.
+	/// </summary>
+	public ref class LuaMetatableException : public LuaException {
+	public:
+		/// <summary>
+		/// Initialise a new instance of the <see cref="LuaMetatableException"/> class with a default message. 
+		/// </summary>
+		LuaMetatableException() : LuaException("Fatal Lua metatable exception occured") {}
+		/// <summary>
+		/// Initialise a new instance of the <see cref="LuaMetatableException"/> class with a specified message.
+		/// </summary>
+		/// <param name="message">The message clarifying the exception.</param>
+		LuaMetatableException(System::String^ message) : LuaException(message) {}
+		/// <summary>
+		/// Initialise a new instance of the <see cref="LuaMetatableException"/> class with a specified message and a reference to the inner <see cref="System::Exception"/> that
+		/// caused the exception.
+		/// </summary>
+		/// <param name="message">The message clarifying the exception.</param>
+		/// <param name="innerException">The inner <see cref="System::Exception"/> that triggered this <see cref="LuaMetatableException"/>.</param>
+		LuaMetatableException(System::String^ message, System::Exception^ innerException) : LuaException(message, innerException) {}
+	};
+
 }
