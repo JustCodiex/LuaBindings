@@ -30,7 +30,9 @@ namespace Lua {
 				throw gcnew LuaRuntimeException(str);
 			}
 			try {
-				return safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), -1));
+				T val = safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), -1));
+				System::GC::KeepAlive(state);
+				return val;
 			} catch (System::InvalidCastException^ icex) {
 				System::String^ err = System::String::Format("Lua return value type {0} cannot be cast to managed type {1}.", state->Type(), T::typeid->FullName);
 				throw gcnew LuaRuntimeException(err, icex);
@@ -51,7 +53,9 @@ namespace Lua {
 		static T GetGlobal(LuaState^ state, System::String^ name) {
 			auto t = state->GetGlobal(name);
 			try {
-				return safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), t, -1));
+				T val = safe_cast<T>(LuaMarshal::MarshalStackValue(state->get_state(), t, -1));
+				System::GC::KeepAlive(state);
+				return val;
 			} catch (System::InvalidCastException^ icex) {
 				System::String^ err = System::String::Format("Global lua type {0} cannot be cast to managed type {1}.", t, T::typeid->FullName);
 				throw gcnew LuaRuntimeException(err, icex);

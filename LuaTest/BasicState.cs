@@ -271,6 +271,10 @@ public class BasicState {
         double v = state2.DoString<double>("return mul(2,2)");
         Assert.That(v, Is.EqualTo(4));
 
+        // Keep both states alive
+        GC.KeepAlive(state1);
+        GC.KeepAlive(state2);
+
     }
 
 }
